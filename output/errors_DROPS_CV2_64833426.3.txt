@@ -1,0 +1,147 @@
+Running "module reset". Resetting modules to system default. The following $MODULEPATH directories have been removed: None
+dos2unix: converting file ./DROPS/scripts/DROPS_CV2_3.R to Unix format...
+Loading required package: Matrix
+Loading ASReml-R version 4.2
+
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: There were 11 warnings (use warnings() to see them)
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: There were 35 warnings (use warnings() to see them)
+Error : Sparse MET sampling got stuck... Trying again...
+Error : Sparse MET sampling got stuck... Trying again...
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: Warning messages:
+1: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+2: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+3: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+4: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+5: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+6: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+7: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+8: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: There were 12 warnings (use warnings() to see them)
+Error : Sparse MET sampling got stuck... Trying again...
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: Warning messages:
+1: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+2: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+3: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+4: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+5: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+6: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+7: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+8: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: There were 11 warnings (use warnings() to see them)
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: Warning messages:
+1: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+2: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+3: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+4: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: There were 21 warnings (use warnings() to see them)
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: Warning messages:
+1: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+2: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+3: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: There were 50 or more warnings (use warnings() to see the first 50)
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: Warning messages:
+1: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+2: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+3: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+4: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: Warning messages:
+1: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+2: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+3: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+4: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+5: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+6: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: There were 19 warnings (use warnings() to see them)
+Error : Sparse MET sampling got stuck... Trying again...
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: Warning messages:
+1: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+2: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+3: In asreml(fixed = GY ~ -1 + ManEnv, random = ~own(ManEnv, "vf",  :
+  Log-likelihood not converged
+4: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+5: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+6: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+7: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+8: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+9: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: Warning messages:
+1: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+2: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+3: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+4: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+5: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: There were 16 warnings (use warnings() to see them)
+Error : Sparse MET sampling got stuck... Trying again...
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: Warning messages:
+1: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Log-likelihood not converged
+2: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+3: In asreml(GY ~ -1 + ManEnv, random = ~fa(ManEnv, m):vm(Gen, K),  :
+  Some components changed by more than 1% on the last iteration
+Error : Sparse MET sampling got stuck... Trying again...
+In addition: There were 41 warnings (use warnings() to see them)
+There were 13 warnings (use warnings() to see them)
