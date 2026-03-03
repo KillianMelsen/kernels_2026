@@ -25,11 +25,11 @@
   R8  <- droplevels(R8[R8$Run %in% 71:80,])
   R9  <- droplevels(R9[R9$Run %in% 81:90,])
   R10 <- droplevels(R10[R10$Run %in% 91:100,])
-  R11 <- droplevels(R10[R10$Run %in% 101:110,])
-  R12 <- droplevels(R10[R10$Run %in% 111:120,])
-  R13 <- droplevels(R10[R10$Run %in% 121:130,])
-  R14 <- droplevels(R10[R10$Run %in% 131:140,])
-  R15 <- droplevels(R10[R10$Run %in% 141:150,])
+  R11 <- droplevels(R11[R11$Run %in% 101:110,])
+  R12 <- droplevels(R12[R12$Run %in% 111:120,])
+  R13 <- droplevels(R13[R13$Run %in% 121:130,])
+  R14 <- droplevels(R14[R14$Run %in% 131:140,])
+  R15 <- droplevels(R15[R15$Run %in% 141:150,])
 }
 
 R <- rbind(R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15)

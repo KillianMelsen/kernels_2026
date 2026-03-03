@@ -354,53 +354,91 @@ for (i in 31:(nrow(summary(mod.mvar.GK)$varcomp) - 1)) {
 saveRDS(results, "BRIWECS_LOF/results_BRIWECS_LOF.rds")
 results <- readRDS("BRIWECS_LOF/results_BRIWECS_LOF.rds")
 library(ggplot2)
+library(patchwork)
 
 # Plotting
-colnames(results) <- c("Model", "Management", "Environment", "Covariables", "LOF", "Residual")
+colnames(results) <- c("Model", "Management", "Environment", "(Latent) Covariables", "LOF", "Residual")
 results2 <- as.data.frame(tidyr::pivot_longer(results, 4:6, names_to = "Component", values_to = "Variance"))
-results3 <- as.data.frame(tidyr::pivot_longer(aggregate(results, cbind(Covariables, LOF, Residual) ~ Model + Management, FUN = mean), 3:5, names_to = "Component", values_to = "Variance"))
-results2$Component <- factor(results2$Component, levels = c("Covariables", "LOF", "Residual"), labels = c("Covariables", "Lack of fit", "Residual"))
-results3$Component <- factor(results3$Component, levels = c("Covariables", "LOF", "Residual"), labels = c("Covariables", "Lack of fit", "Residual"))
+results3 <- as.data.frame(tidyr::pivot_longer(aggregate(results, cbind(`(Latent) Covariables`, LOF, Residual) ~ Model + Management, FUN = mean), 3:5, names_to = "Component", values_to = "Variance"))
+results2$Component <- factor(results2$Component, levels = c("(Latent) Covariables", "LOF", "Residual"), labels = c("(Latent) Covariables", "Lack of fit", "Residual"))
+results3$Component <- factor(results3$Component, levels = c("(Latent) Covariables", "LOF", "Residual"), labels = c("(Latent) Covariables", "Lack of fit", "Residual"))
 results2 <- droplevels(results2[results2$Model %in% c("FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK"),])
 results3 <- droplevels(results3[results3$Model %in% c("FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK"),])
 
 levels(results2$Management) <- c("High Nitrogen", "Low Nitrogen")
 levels(results3$Management) <- c("High Nitrogen", "Low Nitrogen")
 
-ggplot(results2, aes(fill = Component, y = Variance, x = Model)) +
-  facet_grid(rows = vars(Environment), cols = vars(Management)) +
-  geom_bar(position = "fill", stat = "identity") +
-  scale_fill_manual(values = c("#fcdd06", "#db161f", "#0e44af")) +
-  scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
-  ylab("Percentage of total variance") +
-  theme_classic(base_size = 18) + theme(legend.position = "bottom")
-ggsave(filename = "plots/BRIWECS_LOF.png", dpi = 300, width = 32, height = 40, units = "cm")
+# ggplot(results2, aes(fill = Component, y = Variance, x = Model)) +
+#   facet_grid(rows = vars(Environment), cols = vars(Management)) +
+#   geom_bar(position = "fill", stat = "identity") +
+#   scale_fill_manual(values = c("#fcdd06", "#db161f", "#0e44af")) +
+#   scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
+#   ylab("Percentage of total variance") +
+#   theme_classic(base_size = 18) + theme(legend.position = "bottom")
+# ggsave(filename = "plots/BRIWECS_LOF.png", dpi = 300, width = 32, height = 40, units = "cm")
 
-ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
+# perc <- ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
+#   facet_grid(cols = vars(Management)) +
+#   geom_bar(position = "fill", stat = "identity") +
+#   scale_fill_manual(values = c("#fcdd06", "#db161f", "#0e44af")) +
+#   scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
+#   ylab("Percentage of total\nvariance") +
+#   theme_classic(base_size = 18) + theme(legend.position = "bottom",
+#                                         strip.background = element_blank(),
+#                                         strip.text = element_text(size = 20),
+#                                         axis.title.y = element_text(size = 20))
+# perc
+# ggsave(plot = perc, filename = "plots/BRIWECS_LOF_Averaged.png", dpi = 300, width = 32, height = 10, units = "cm")
+
+perc <- ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
   facet_grid(cols = vars(Management)) +
   geom_bar(position = "fill", stat = "identity") +
   scale_fill_manual(values = c("#fcdd06", "#db161f", "#0e44af")) +
   scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
-  ylab("Percentage of total\nvariance") +
-  theme_classic(base_size = 18) + theme(legend.position = "bottom")
-ggsave(filename = "plots/BRIWECS_LOF_Averaged.png", dpi = 300, width = 32, height = 10, units = "cm")
+  ylab("Percentage of\ntotal variance") +
+  theme_classic(base_size = 18) +
+  theme(legend.position = "none",
+        strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.title.y = element_text(size = 20))
+perc
 
-results$Total <- results$Covariables + results$LOF + results$Residual
-results$GxExM_percentage <- results$Covariables / results$Total
+results$Total <- results$`(Latent) Covariables` + results$LOF + results$Residual
+results$Covariable_percentage <- results$`(Latent) Covariables` / results$Total
 results$LOF_percentage <- results$LOF / results$Total
 results$Residual_percentage <- results$Residual / results$Total
 
 # Output ====
 ## Figure 4 ====
-ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
+# var <- ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
+#   facet_grid(cols = vars(Management)) +
+#   geom_bar(stat = "identity") +
+#   scale_fill_manual(values = c("#fcdd06", "#db161f", "#0e44af")) +
+#   # scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
+#   ylab("Variance") +
+#   theme_classic(base_size = 18) + theme(legend.position = "bottom",
+#                                         strip.background = element_blank(),
+#                                         strip.text = element_text(size = 20),
+#                                         axis.title.y = element_text(size = 20)) +
+#   ylim(c(0, 115))
+# var
+# ggsave(plot = var, filename = "plots/BRIWECS_LOF_Averaged_numeric.png", dpi = 300, width = 32, height = 15, units = "cm")
+
+var <- ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
   facet_grid(cols = vars(Management)) +
   geom_bar(stat = "identity") +
   scale_fill_manual(values = c("#fcdd06", "#db161f", "#0e44af")) +
   # scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
-  ylab("Variance") +
-  theme_classic(base_size = 18) + theme(legend.position = "bottom") +
+  ylab("Variance") + xlab(NULL) +
+  theme_classic(base_size = 18) + theme(legend.position = "none") +
+  theme(strip.text = element_text(size = 20),
+        strip.background = element_blank(),
+        axis.title.y = element_text(size = 20),
+        axis.text.x = element_blank()) +
   ylim(c(0, 115))
-ggsave(filename = "plots/BRIWECS_LOF_Averaged_numeric.png", dpi = 300, width = 32, height = 15, units = "cm")
+var
+var / perc
+ggsave(filename = "plots/BRIWECS_LOF_Averaged_numeric_combined.png", dpi = 300, width = 32, height = 18, units = "cm")
 
 ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment)[1:7],]), aes(fill = Component, y = Variance, x = Model)) +
   facet_grid(cols = vars(Management), rows = vars(Environment), scales = "free_y") +
@@ -408,7 +446,10 @@ ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment
   scale_fill_manual(values = c("#fcdd06", "#db161f", "#0e44af")) +
   # scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
   ylab("Variance") +
-  theme_classic(base_size = 18) + theme(legend.position = "bottom")
+  theme_classic(base_size = 18) + theme(legend.position = "bottom",
+                                        strip.background = element_blank(),
+                                        strip.text = element_text(size = 20),
+                                        axis.title.y = element_text(size = 20))
 ggsave(filename = "plots/BRIWECS_LOF_perEnv_numeric_A.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment)[8:14],]), aes(fill = Component, y = Variance, x = Model)) +
@@ -417,21 +458,26 @@ ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment
   scale_fill_manual(values = c("#fcdd06", "#db161f", "#0e44af")) +
   # scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
   ylab("Variance") +
-  theme_classic(base_size = 18) + theme(legend.position = "bottom")
+  theme_classic(base_size = 18) + theme(legend.position = "bottom",
+                                        strip.background = element_blank(),
+                                        strip.text = element_text(size = 20),
+                                        axis.title.y = element_text(size = 20))
 ggsave(filename = "plots/BRIWECS_LOF_perEnv_numeric_B.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 ## Text of section 3.2.2 ====
+# Heritability:
+tmp <- aggregate(results, cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ Management, FUN = mean)
+tmp$h2 <- round((tmp$`(Latent) Covariables` + tmp$LOF) / (tmp$`(Latent) Covariables` + tmp$LOF + tmp$Residual), 2)
+tmp[, c("Management", "h2")]
+
 # Total genetic variance per management:
-tmp <- aggregate(results, cbind(Covariables, LOF, Residual, Total) ~ Management, FUN = mean)
-tmp$GenTotal <- round(tmp$Covariables + tmp$LOF, 2)
-tmp[, c("Management", "GenTotal")]
+tmp <- aggregate(results, cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ Management, FUN = mean)
+tmp$Genetic <- round(tmp$LOF + tmp$`(Latent) Covariables`, 2)
+tmp[, c("Management", "Genetic")]
 
 # Percentages of genetic variance explained by the environmental covariables per model:
-tmp <- aggregate(results, cbind(Covariables, LOF, Residual, Total) ~ Model, FUN = mean)
-tmp$PercCov <- round(tmp$Covariables / (tmp$Covariables + tmp$LOF), 2)
+tmp <- aggregate(results, cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ Model, FUN = mean)
+tmp$PercCov <- round(tmp$`(Latent) Covariables` / (tmp$`(Latent) Covariables` + tmp$LOF), 2)
 tmp[, c("Model", "PercCov")]
 
-# Percentages of genetic variance explained by the environmental covariables per management:
-tmp <- aggregate(results, cbind(Covariables, LOF, Residual, Total) ~ Management, FUN = mean)
-tmp$PercCov <- round(tmp$Covariables / (tmp$Covariables + tmp$LOF), 2)
-tmp[, c("Management", "PercCov")]
+

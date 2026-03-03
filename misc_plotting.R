@@ -65,4 +65,34 @@ cowplot::plot_grid(Briwecs, DROPS, rel_widths = c(1, 2.29)) +
 
 ggsave(filename = "plots/locations.png", dpi = 300, width = 30, height = 15, units = "cm")
 
+rm(list = ls())
+
+# Plotting the Gaussian kernel function ====
+library(ggplot2)
+distance <- bigsnpr::seq_log(0.01, 5, 50)
+bandwidth <- bigsnpr::seq_log(0.001, 2, 50)
+x <- expand.grid(Distance = distance, Bandwidth = bandwidth)
+x$Correlation <- exp(-x$Bandwidth * x$Distance)
+
+# Custom color palette:
+my_palette <- colorRampPalette(c("#fcdd06", "#db161f", "#0e44af"))
+my_colors <- my_palette(10000)
+
+ggplot(x, aes(x = Distance, y = Bandwidth, z = Correlation)) +
+  geom_contour_filled(bins = 10000) +
+  geom_contour(bins = 10, color = "black", alpha = 0.5) +
+  geom_point(data = x, aes(x = Distance, y = Bandwidth, color = Correlation), alpha = 0) +
+  theme_classic(base_size = 30) +
+  xlab("Distance") + ylab("Bandwidth (h)") +
+  labs(fill = "Correlation") +
+  scale_fill_manual(values = my_colors[10000:1], guide = "none") +
+  scale_color_gradientn(colors = my_colors[10000:1],
+                        limits = c(0, 1)) +
+  theme(legend.title = element_text(vjust = 5),
+        legend.key.width = unit(3, "cm"),
+        legend.key.height = unit(1.5, "cm"))
+
+# Export manually via Export > Save as Image at 2000 x 750 (width x height) pixels because the colors are messed up when saving via ggsave()
+
+
 
