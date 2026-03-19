@@ -19,12 +19,27 @@ EC <- readRDS("Briwecs/data/datalist.rds")$EC[levels(d.full$Env), levels(d.full$
 ED <- readRDS("Briwecs/data/datalist.rds")$ED[levels(d.full$Env), levels(d.full$Env)]
 
 # Results structure ====
-results <- expand.grid(Model = c("FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK"),
+results <- expand.grid(Model = c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK"),
                        Management = levels(d.full$Man),
                        Environment = levels(d.full$Env),
                        Vge = NA,
                        Vlof = NA,
                        Ve = NA)
+
+# ADD ====
+mod.ADD <- asreml(GY ~ -1 + ManEnv,
+                  random = ~ vm(Gen, K) + diag(ManEnv):vm(Gen, K),
+                  residual = ~ units,
+                  data = d.full,
+                  trace = TRUE)
+
+results[results$Model == "ADD", "Vge"] <- summary(mod.ADD)$varcomp[1, "component"]
+results[results$Model == "ADD", "Ve"] <- summary(mod.ADD)$varcomp[nrow(summary(mod.ADD)$varcomp), "component"]
+for (i in 2:(nrow(summary(mod.ADD)$varcomp) - 1)) {
+  management <- gsub(".*_([HL]N):(.*)", "\\1", rownames(summary(mod.ADD)$varcomp)[i])
+  environment <- gsub(".*_([HL]N):(.*)", "\\2", rownames(summary(mod.ADD)$varcomp)[i])
+  results[results$Model == "ADD" & results$Management == management & results$Environment == environment, "Vlof"] <- summary(mod.ADD)$varcomp$component[i]
+}
 
 # FA1 ====
 mod.FA1 <- asreml(GY ~ -1 + ManEnv,
@@ -362,8 +377,8 @@ results2 <- as.data.frame(tidyr::pivot_longer(results, 4:6, names_to = "Componen
 results3 <- as.data.frame(tidyr::pivot_longer(aggregate(results, cbind(`(Latent) Covariables`, LOF, Residual) ~ Model + Management, FUN = mean), 3:5, names_to = "Component", values_to = "Variance"))
 results2$Component <- factor(results2$Component, levels = c("(Latent) Covariables", "LOF", "Residual"), labels = c("(Latent) Covariables", "Lack of fit", "Residual"))
 results3$Component <- factor(results3$Component, levels = c("(Latent) Covariables", "LOF", "Residual"), labels = c("(Latent) Covariables", "Lack of fit", "Residual"))
-results2 <- droplevels(results2[results2$Model %in% c("FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK"),])
-results3 <- droplevels(results3[results3$Model %in% c("FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK"),])
+results2 <- droplevels(results2[results2$Model %in% c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK"),])
+results3 <- droplevels(results3[results3$Model %in% c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK"),])
 
 levels(results2$Management) <- c("High Nitrogen", "Low Nitrogen")
 levels(results3$Management) <- c("High Nitrogen", "Low Nitrogen")
@@ -397,7 +412,7 @@ perc <- ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
   scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
   ylab("Percentage of\ntotal variance") +
   theme_classic(base_size = 18) +
-  theme(legend.position = "none",
+  theme(legend.position = "bottom",
         strip.background = element_blank(),
         strip.text = element_blank(),
         axis.title.y = element_text(size = 20))
