@@ -415,7 +415,8 @@ perc <- ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
   theme(legend.position = "bottom",
         strip.background = element_blank(),
         strip.text = element_blank(),
-        axis.title.y = element_text(size = 20))
+        axis.title.y = element_text(size = 20),
+        axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1.1))
 perc
 
 results$Total <- results$`(Latent) Covariables` + results$LOF + results$Residual
@@ -453,7 +454,7 @@ var <- ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
   ylim(c(0, 115))
 var
 var / perc
-ggsave(filename = "plots/BRIWECS_LOF_Averaged_numeric_combined.png", dpi = 300, width = 32, height = 18, units = "cm")
+ggsave(filename = "plots/BRIWECS_LOF_Averaged_numeric_combined.png", dpi = 300, width = 32, height = 20, units = "cm")
 
 ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment)[1:7],]), aes(fill = Component, y = Variance, x = Model)) +
   facet_grid(cols = vars(Management), rows = vars(Environment), scales = "free_y") +
@@ -464,7 +465,8 @@ ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment
   theme_classic(base_size = 18) + theme(legend.position = "bottom",
                                         strip.background = element_blank(),
                                         strip.text = element_text(size = 20),
-                                        axis.title.y = element_text(size = 20))
+                                        axis.title.y = element_text(size = 20),
+                                        axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1.1))
 ggsave(filename = "plots/BRIWECS_LOF_perEnv_numeric_A.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment)[8:14],]), aes(fill = Component, y = Variance, x = Model)) +
@@ -476,7 +478,8 @@ ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment
   theme_classic(base_size = 18) + theme(legend.position = "bottom",
                                         strip.background = element_blank(),
                                         strip.text = element_text(size = 20),
-                                        axis.title.y = element_text(size = 20))
+                                        axis.title.y = element_text(size = 20),
+                                        axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1.1))
 ggsave(filename = "plots/BRIWECS_LOF_perEnv_numeric_B.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 ## Text of section 3.2.2 ====
