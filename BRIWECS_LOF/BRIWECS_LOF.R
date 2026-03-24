@@ -375,8 +375,8 @@ library(patchwork)
 colnames(results) <- c("Model", "Management", "Environment", "(Latent) Covariables", "LOF", "Residual")
 results2 <- as.data.frame(tidyr::pivot_longer(results, 4:6, names_to = "Component", values_to = "Variance"))
 results3 <- as.data.frame(tidyr::pivot_longer(aggregate(results, cbind(`(Latent) Covariables`, LOF, Residual) ~ Model + Management, FUN = mean), 3:5, names_to = "Component", values_to = "Variance"))
-results2$Component <- factor(results2$Component, levels = c("(Latent) Covariables", "LOF", "Residual"), labels = c("(Latent) Covariables", "Lack of fit", "Residual"))
-results3$Component <- factor(results3$Component, levels = c("(Latent) Covariables", "LOF", "Residual"), labels = c("(Latent) Covariables", "Lack of fit", "Residual"))
+results2$Component <- factor(results2$Component, levels = c("(Latent) Covariables", "LOF", "Residual"), labels = c("Structured effect", "Lack of fit effect", "Residual effect"))
+results3$Component <- factor(results3$Component, levels = c("(Latent) Covariables", "LOF", "Residual"), labels = c("Structured effect", "Lack of fit effect", "Residual effect"))
 results2 <- droplevels(results2[results2$Model %in% c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK"),])
 results3 <- droplevels(results3[results3$Model %in% c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK"),])
 
@@ -484,12 +484,12 @@ ggsave(filename = "plots/BRIWECS_LOF_perEnv_numeric_B.png", dpi = 300, width = 3
 
 ## Text of section 3.2.2 ====
 # Heritability:
-tmp <- aggregate(results, cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ Management, FUN = mean)
+tmp <- aggregate(droplevels(results[results$Model != "ADD",]), cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ Management, FUN = mean)
 tmp$h2 <- round((tmp$`(Latent) Covariables` + tmp$LOF) / (tmp$`(Latent) Covariables` + tmp$LOF + tmp$Residual), 2)
 tmp[, c("Management", "h2")]
 
 # Total genetic variance per management:
-tmp <- aggregate(results, cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ Management, FUN = mean)
+tmp <- aggregate(droplevels(results[results$Model != "ADD",]), cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ Management, FUN = mean)
 tmp$Genetic <- round(tmp$LOF + tmp$`(Latent) Covariables`, 2)
 tmp[, c("Management", "Genetic")]
 
@@ -497,5 +497,10 @@ tmp[, c("Management", "Genetic")]
 tmp <- aggregate(results, cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ Model, FUN = mean)
 tmp$PercCov <- round(tmp$`(Latent) Covariables` / (tmp$`(Latent) Covariables` + tmp$LOF), 2)
 tmp[, c("Model", "PercCov")]
+
+# Percentages of genetic variance explained by the environmental covariables per model/management (pretty close to the percentages averaged over managements):
+# tmp <- aggregate(results, cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ Model + Management, FUN = mean)
+# tmp$PercCov <- round(tmp$`(Latent) Covariables` / (tmp$`(Latent) Covariables` + tmp$LOF), 2)
+# tmp[, c("Management", "Model", "PercCov")]
 
 
