@@ -1,21 +1,21 @@
 #!/bin/bash
 
 # -----------------------------Name of the job-------------------------
-#SBATCH --job-name=kernels_2026_Briwecs_CV2_withweights
+#SBATCH --job-name=kernels_2026_DROPS_CV2_withweights
 
 #-----------------------------Output files-----------------------------
-#SBATCH --output=output/output_Briwecs_CV2_%A.%a.txt
-#SBATCH --error=output/errors_Briwecs_CV2_%A.%a.txt
+#SBATCH --output=output/output_DROPS_CV2_%A.%a.txt
+#SBATCH --error=output/errors_DROPS_CV2_%A.%a.txt
 
 #-----------------------------Other information------------------------
-#SBATCH --comment='kernels_2026 Briwecs CV2 with weights'
+#SBATCH --comment='kernels_2026 DROPS CV2 with weights'
 
 #-----------------------------Required resources-----------------------
 #SBATCH --time=7-00:00:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=16G
-#SBATCH --array=1-25
+#SBATCH --array=1
 
 #-----------------------------Environment, Operations and Job steps----
 # Modules
@@ -25,8 +25,8 @@ module load R/4.4.2
 module load R-bundle-CRAN/2024
 
 # Converting to unix and running R script
-dos2unix ./Briwecs/scripts/Briwecs_CV2_${SLURM_ARRAY_TASK_ID}.R
-chmod +x ./Briwecs/scripts/Briwecs_CV2_${SLURM_ARRAY_TASK_ID}.R
-./Briwecs/scripts/Briwecs_CV2_${SLURM_ARRAY_TASK_ID}.R
+dos2unix ./DROPS/scripts/DROPS_CV2_${SLURM_ARRAY_TASK_ID}.R
+chmod +x ./DROPS/scripts/DROPS_CV2_${SLURM_ARRAY_TASK_ID}.R
+./DROPS/scripts/DROPS_CV2_${SLURM_ARRAY_TASK_ID}.R
 
 

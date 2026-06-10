@@ -59,7 +59,7 @@ d <- droplevels(d[d$Env != "GGE_2017",])
 # levels(d$Env)
 # ggplot(droplevels(d[d$Env == "KIE_2017",]), aes(x = Col, y = Row, color = Man, shape = Block)) +
 #   geom_point(size = 3) + theme_classic()
-if (!("d.corr.rds" %in% list.files("Briwecs/data/"))) {
+if (!("d.corr.SE.rds" %in% list.files("Briwecs/data/"))) {
   BLUEs <- vector("list", length(levels(d$Env)))
   i <- 14
   for (i in 1:length(levels(d$Env))) {
@@ -69,31 +69,47 @@ if (!("d.corr.rds" %in% list.files("Briwecs/data/"))) {
     dss$C <- as.factor(dss$Col)
     dss$ManGen <- as.factor(paste(dss$Man, dss$Gen, sep = ":"))
     dss <- droplevels(dss[!(is.na(dss$GY)),])
-    fit <- LMMsolve(fixed = GY ~ ManGen,
+    fit <- LMMsolve(fixed = GY ~ -1 + ManGen,
                     random = ~ Man:Block + R + C,
                     spline = ~ spl2D(Row, Col, nseg = c(25, 70)),
                     data = dss, maxit = 250, trace = TRUE, tolerance = 1e-6)
     
-    pred <- obtainSmoothTrend(fit, newdata = dss, includeIntercept = TRUE)
-  
-    ggplot(pred, aes(x = Col, y = Row, fill = ypred)) +
-      geom_tile(show.legend = TRUE) +
-      scale_fill_gradientn(colours = topo.colors(100)) +
-      coord_fixed() +
-      theme(panel.grid.major = element_blank(),
-            panel.grid.minor = element_blank())
+    # Getting standard errors
+    C <- as.matrix(fit$C) # Coefficient matrix
+    X <- as.matrix(fit$X) # Fixed effects design matrix
+    Z <- as.matrix(fit$Z) # Random effects design matrix
+    nX <- ncol(as.matrix(fit$X)) # Number of fixed effects (BLUEs for management-genotype combinations)
+    Czz <- C[(nX + 1):nrow(C), (nX + 1):ncol(C)] # Block of C corresponding to the random effects (Zt %*% Ri %*% Z + Gi)
+    Ri <- as.matrix(fit$lRinv$residual) * (1 / fit$VarDf$Variance[fit$VarDf$VarComp == "residual"]) # Inverse residual covariance matrix
+    Gi <- Czz - t(Z) %*% Ri %*% Z # Inverse random effects covariance matrix, see comment on Czz line
+    V <- Z %*% solve(Gi) %*% t(Z) + solve(Ri) # Total covariance matrix
+    Vi <- solve(V)
+    omega <- solve(t(X) %*% Vi %*% X)
+    omegai <- solve(omega)
+    weights <- diag(omegai)[1:(nrow(omegai) - 3)]
+    
+    # pred <- obtainSmoothTrend(fit, newdata = dss, includeIntercept = TRUE)
+    # 
+    # ggplot(pred, aes(x = Col, y = Row, fill = ypred)) +
+    #   geom_tile(show.legend = TRUE) +
+    #   scale_fill_gradientn(colours = topo.colors(100)) +
+    #   coord_fixed() +
+    #   theme(panel.grid.major = element_blank(),
+    #         panel.grid.minor = element_blank())
     
     estimates <- coef(fit)
     BLUEs <- data.frame(ManGen = names(estimates$ManGen),
                         GY = as.numeric(estimates$ManGen))
-    BLUEs$GY <- BLUEs$GY + as.numeric(estimates$`(Intercept)`)
+    # BLUEs$GY <- BLUEs$GY + as.numeric(estimates$`(Intercept)`)
     BLUEs$Man <- gsub("ManGen_(.*):(.*)", "\\1", BLUEs$ManGen)
     BLUEs$Gen <- gsub("ManGen_(.*):(.*)", "\\2", BLUEs$ManGen)
     BLUEs$Env <- e
+    BLUEs <- BLUEs[-1, ] # Discarding the first row because we have no intercept.
+    BLUEs$weight <- weights
     if (i == 1) {
-      d.corr <- BLUEs[, c("Man", "Env", "Gen", "GY")]
+      d.corr <- BLUEs[, c("Man", "Env", "Gen", "GY", "weight")]
     } else {
-      d.corr <- rbind(d.corr, BLUEs[, c("Man", "Env", "Gen", "GY")])
+      d.corr <- rbind(d.corr, BLUEs[, c("Man", "Env", "Gen", "GY", "weight")])
     }
   }
   
@@ -146,11 +162,11 @@ if (!("d.corr.rds" %in% list.files("Briwecs/data/"))) {
   d.corr$Env <- as.factor(d.corr$Env)
   d.corr$Gen <- as.factor(d.corr$Gen)
   K <- K[levels(d.corr$Gen), levels(d.corr$Gen)]
-  saveRDS(d.corr, "Briwecs/data/d.corr.rds")
-  saveRDS(K, "Briwecs/data/K.corr.rds")
+  saveRDS(d.corr, "Briwecs/data/d.corr.SE.rds")
+  saveRDS(K, "Briwecs/data/K.corr.SE.rds")
 } else {
-  d.corr <- readRDS("Briwecs/data/d.corr.rds")
-  K <- readRDS("Briwecs/data/K.corr.rds")
+  d.corr <- readRDS("Briwecs/data/d.corr.SE.rds")
+  K <- readRDS("Briwecs/data/K.corr.SE.rds")
 }
 
 # For now, let's focus on LN/HN with no fungicide:
@@ -215,7 +231,7 @@ K <- K[levels(d.corr.ss$Gen), levels(d.corr.ss$Gen)]
 order <- rownames(kronecker(kronecker(M.man, M.env, make.dimnames = TRUE), K, make.dimnames = TRUE))
 
 d.corr.ss <- d.corr.ss[match(order, as.character(d.corr.ss$ManEnvGen)),
-                       c("Man", "Env", "Gen", "ManEnv", "ManGen", "EnvGen", "ManEnvGen", "GY", "reps")]
+                       c("Man", "Env", "Gen", "ManEnv", "ManGen", "EnvGen", "ManEnvGen", "GY", "weight", "reps")]
 
 cormat.HN <- cormat.HN[levels(d.corr.ss$Env), levels(d.corr.ss$Env)]
 cormat.LN <- cormat.LN[levels(d.corr.ss$Env), levels(d.corr.ss$Env)]
@@ -227,8 +243,8 @@ datalist.benchmark <- list(ydata = d.corr.ss,
                            cormat.HN = cormat.HN, cormat.LN = cormat.LN,
                            vars.HN = diag(covmat.HN), vars.LN = diag(covmat.LN))
 
-saveRDS(datalist.benchmark, "Briwecs/data/datalist.benchmark.rds")
-saveRDS(K, "Briwecs/data/K.benchmark.rds")
+# saveRDS(datalist.benchmark, "Briwecs/data/datalist.benchmark.SE.rds")
+# saveRDS(K, "Briwecs/data/K.benchmark.SE.rds")
 
 # Environmental data:
 coords <- data.frame(Loc = c("HAN",      "KAL",      "KIE",      "QLB",     "RHH"),
@@ -419,33 +435,33 @@ all(levels(datalist$ydata$Env) == rownames(datalist$EC))
 all(levels(datalist$ydata$Gen) == rownames(K))
 all(levels(datalist$ydata$EnvGen) == rownames(kronecker(datalist$EC, K, make.dimnames = TRUE)))
 
-saveRDS(datalist, "Briwecs/data/datalist.rds")
-saveRDS(K, "Briwecs/data/K.rds")
+saveRDS(datalist, "Briwecs/data/datalist.SE.rds")
+saveRDS(K, "Briwecs/data/K.SE.rds")
 
-d.full <- droplevels(d.full[d.full$Treatment %in% c("LN_NF_RF", "HN_NF_RF"),])
-d.full$Man <- as.factor(ifelse(as.character(d.full$Treatment) == "LN_NF_RF", "LN", "HN"))
-d.full$ManEnvGen <- as.factor(paste(d.full$Man, d.full$Env, d.full$BRISONr, sep = ":"))
-d.misc <- aggregate(d.full, cbind(Sowing_date, Emergence_date, BBCH59, BBCH87,
-                                  Plantheight_bio, Seedyield, Seedyield_bio, Biomass_bio,
-                                  Harvest_Index_bio, TGW, TGW_bio, Spike_number_bio,
-                                  Stripe_rust, Powdery_mildew, Leaf_rust, Septoria,
-                                  DTR, Fusarium, Falling_number, Crude_protein,
-                                  Sedimentation, Grain_per_spike_bio, Grain, Biomass,
-                                  Protein_yield
-                                  ) ~ ManEnvGen, FUN = mean, na.action = na.pass)
-d.misc <- droplevels(d.misc[match(datalist$ydata$ManEnvGen, d.misc$ManEnvGen),])
-
-info <- read.csv("Briwecs/raw_data/BRIWECs_cultivar_info.csv")
-# Some genotypes have annoying names so we maually change those:
-info$genotype[which(info$genotype == "Triple Dirk \"S\"")] <- "Triple Dirk S"
-info$genotype[which(info$genotype == "G\xf6tz")] <- "Gotz"
-info$genotype[which(info$genotype == "T\xfcrkis")] <- "Turkis"
-
-d.misc$Gen <- as.factor(gsub("..:.*:(.*)", "\\1", as.character(d.misc$ManEnvGen)))
-info$genotype <- gsub(" ", "_", info$genotype)
-info <- droplevels(info[match(d.misc$Gen, info$genotype),])
-
-d.misc <- cbind(d.misc, info[, c("baking_qulaity", "country", "breeder", "RYear")])
-datalist$ydata <- cbind(datalist$ydata, d.misc[, setdiff(colnames(d.misc), c("ManEnvGen", "Gen"))])
-
-saveRDS(datalist, "Briwecs/data/datalist.miscinfo.rds")
+# d.full <- droplevels(d.full[d.full$Treatment %in% c("LN_NF_RF", "HN_NF_RF"),])
+# d.full$Man <- as.factor(ifelse(as.character(d.full$Treatment) == "LN_NF_RF", "LN", "HN"))
+# d.full$ManEnvGen <- as.factor(paste(d.full$Man, d.full$Env, d.full$BRISONr, sep = ":"))
+# d.misc <- aggregate(d.full, cbind(Sowing_date, Emergence_date, BBCH59, BBCH87,
+#                                   Plantheight_bio, Seedyield, Seedyield_bio, Biomass_bio,
+#                                   Harvest_Index_bio, TGW, TGW_bio, Spike_number_bio,
+#                                   Stripe_rust, Powdery_mildew, Leaf_rust, Septoria,
+#                                   DTR, Fusarium, Falling_number, Crude_protein,
+#                                   Sedimentation, Grain_per_spike_bio, Grain, Biomass,
+#                                   Protein_yield
+#                                   ) ~ ManEnvGen, FUN = mean, na.action = na.pass)
+# d.misc <- droplevels(d.misc[match(datalist$ydata$ManEnvGen, d.misc$ManEnvGen),])
+# 
+# info <- read.csv("Briwecs/raw_data/BRIWECs_cultivar_info.csv")
+# # Some genotypes have annoying names so we maually change those:
+# info$genotype[which(info$genotype == "Triple Dirk \"S\"")] <- "Triple Dirk S"
+# info$genotype[which(info$genotype == "G\xf6tz")] <- "Gotz"
+# info$genotype[which(info$genotype == "T\xfcrkis")] <- "Turkis"
+# 
+# d.misc$Gen <- as.factor(gsub("..:.*:(.*)", "\\1", as.character(d.misc$ManEnvGen)))
+# info$genotype <- gsub(" ", "_", info$genotype)
+# info <- droplevels(info[match(d.misc$Gen, info$genotype),])
+# 
+# d.misc <- cbind(d.misc, info[, c("baking_qulaity", "country", "breeder", "RYear")])
+# datalist$ydata <- cbind(datalist$ydata, d.misc[, setdiff(colnames(d.misc), c("ManEnvGen", "Gen"))])
+# 
+# saveRDS(datalist, "Briwecs/data/datalist.miscinfo.rds")

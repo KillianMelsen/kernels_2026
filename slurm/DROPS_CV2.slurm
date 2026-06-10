@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # -----------------------------Name of the job-------------------------
-#SBATCH --job-name=kernels_2026_DROPS_CV2
+#SBATCH --job-name=kernels_2026_DROPS_CV2_withweights
 
 #-----------------------------Output files-----------------------------
 #SBATCH --output=output/output_DROPS_CV2_%A.%a.txt
 #SBATCH --error=output/errors_DROPS_CV2_%A.%a.txt
 
 #-----------------------------Other information------------------------
-#SBATCH --comment='kernels_2026 DROPS CV2'
+#SBATCH --comment='kernels_2026 DROPS CV2 with weights'
 
 #-----------------------------Required resources-----------------------
 #SBATCH --time=7-00:00:00

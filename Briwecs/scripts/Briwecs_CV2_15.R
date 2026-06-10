@@ -13,14 +13,14 @@ arr.dim <- 25
 set.seed(1994)
 seeds <- floor(runif(arr.dim, 1000, 2000))
 arr.slurm <- matrix(1:250, ncol = arr.dim)
-envs <- levels(readRDS("Briwecs/data/datalist.rds")$ydata$Env)
+envs <- levels(readRDS("Briwecs/data/datalist.SE.rds")$ydata$Env)
 
 # Loading kinship, env. correlation matrix and full data:
-datalist <- readRDS("Briwecs/data/datalist.rds")
+datalist <- readRDS("Briwecs/data/datalist.SE.rds")
 d.full <- datalist$ydata
 
 # Kinship and environmental matrices:
-K <- readRDS("Briwecs/data/K.rds")[levels(d.full$Gen), levels(d.full$Gen)]
+K <- readRDS("Briwecs/data/K.SE.rds")[levels(d.full$Gen), levels(d.full$Gen)]
 EC <- datalist$EC[levels(d.full$Env), levels(d.full$Env)]
 ED <- datalist$ED[levels(d.full$Env), levels(d.full$Env)]
 
@@ -65,6 +65,15 @@ if (save.models) {
 }
 
 datasets <- arr.slurm[, arr.index]
+
+# So we can store the training/test sets for all runs/nchecks:
+cvsets <- vector("list", length(n.checks))
+names(cvsets) <- paste0("nc", n.checks)
+cvsets <- lapply(cvsets, function(x) {
+  tmp <- vector("list", length(datasets))
+  names(tmp) <- paste0("run", datasets)
+  return(tmp)})
+
 nc <- n.checks[1]
 run <- datasets[1]
 start <- Sys.time()
@@ -104,10 +113,19 @@ for (nc in n.checks) {
     train.set <- c(train.set, checks)
     test.set <- setdiff(levels(d.full$EnvGen), train.set)
     
+    # Storing the training and test sets for reproducibility:
+    cvsets[[paste0("nc", nc)]][[paste0("run", run)]] <- list(train.set = train.set, test.set = test.set)
+    
     # Making the datasets:
     d.train <- d.test <- d.full
     d.train[d.train$EnvGen %in% test.set, "GY"] <- NA
     d.test <- droplevels(d.full[d.full$EnvGen %in% test.set,])
+    
+    # Getting initial values for the MV and SV kernel model variances:
+    # These match what asreml would use for corgh(ManEnv) and corgh(Man):corg(Env) models
+    vars.init.mv <- aggregate(d.train, GY ~ ManEnv, FUN = function(x) var(x) / 10)
+    vars.init.mv <- vars.init.mv$GY[match(levels(d.train$ManEnv), vars.init.mv$ManEnv)]
+    vars.init.sv <- rep(var(na.omit(d.train$GY)) / 20, 2)
     
     # Models ====
     ##  ME model ====
@@ -118,7 +136,9 @@ for (nc in n.checks) {
                        random = ~ vm(Gen, K),
                        residual = ~ units,
                        data = d.train,
-                       trace = trace)
+                       trace = trace,
+                       weights = weight,
+                       family = asr_gaussian(dispersion = 1.0))
       
       pred.ME <- as.data.frame(mod.ME$coefficients$random)
       names(pred.ME) <- "predicted.value"
@@ -170,7 +190,9 @@ for (nc in n.checks) {
                          random = ~ fa(ManEnv, m):vm(Gen, K),
                          residual = ~ units,
                          data = d.train,
-                         trace = trace)
+                         trace = trace,
+                         weights = weight,
+                         family = asr_gaussian(dispersion = 1.0))
         
         pred.FA <- as.data.frame(mod.FA$coefficients$random[1:nrow(d.train),])
         names(pred.FA) <- "predicted.value"
@@ -264,14 +286,16 @@ for (nc in n.checks) {
     
     try({
       tic()
-      init <- c(0.1, 0.1, 0.1)
+      init <- c(vars.init.sv, 0.1)
       type <- c("V", "V", "R")
       con <- c("P", "P", "U")
       mod.svar.EC <- asreml(fixed = GY ~ -1 + ManEnv,
                             random = ~ own(ManEnv, "vf", init, type, con):vm(Gen, K),
                             residual = ~ units,
                             data = d.train,
-                            trace = trace)
+                            trace = trace,
+                            weights = weight,
+                            family = asr_gaussian(dispersion = 1.0))
       
       pred.svar.EC <- as.data.frame(mod.svar.EC$coefficients$random)
       names(pred.svar.EC) <- "predicted.value"
@@ -369,14 +393,16 @@ for (nc in n.checks) {
     
     try({
       tic()
-      init <- c(0.1, 0.1, 0.1, 0.1)
+      init <- c(vars.init.sv, 0.1, 0.1)
       type <- c("V", "V", "R", "V")
       con <- c("P", "P", "U", "P")
       mod.svar.GK <- asreml(fixed = GY ~ -1 + ManEnv,
                             random = ~ own(ManEnv, "vf", init, type, con):vm(Gen, K),
                             residual = ~ units,
                             data = d.train,
-                            trace = trace)
+                            trace = trace,
+                            weights = weight,
+                            family = asr_gaussian(dispersion = 1.0))
       
       pred.svar.GK <- as.data.frame(mod.svar.GK$coefficients$random)
       names(pred.svar.GK) <- "predicted.value"
@@ -467,14 +493,16 @@ for (nc in n.checks) {
     
     try({
       tic()
-      init <- c(rep(0.1, nrow(EC) * length(levels(d.train$Man))), 0.1)
+      init <- c(vars.init.mv, 0.1)
       type <- c(rep("V", nrow(EC) * length(levels(d.train$Man))), "R")
       con <- c(rep("P", nrow(EC) * length(levels(d.train$Man))), "U")
       mod.mvar.EC <- asreml(fixed = GY ~ -1 + ManEnv,
                             random = ~ own(ManEnv, "vf", init, type, con):vm(Gen, K),
                             residual = ~ units,
                             data = d.train,
-                            trace = trace)
+                            trace = trace,
+                            weights = weight,
+                            family = asr_gaussian(dispersion = 1.0))
       
       pred.mvar.EC <- as.data.frame(mod.mvar.EC$coefficients$random)
       names(pred.mvar.EC) <- "predicted.value"
@@ -569,14 +597,16 @@ for (nc in n.checks) {
     
     try({
       tic()
-      init <- c(rep(0.1, nrow(ED) * length(levels(d.train$Man))), 0.1, 0.1)
+      init <- c(vars.init.mv, 0.1, 0.1)
       type <- c(rep("V", nrow(ED) * length(levels(d.train$Man))), "R", "V")
       con <- c(rep("P", nrow(ED) * length(levels(d.train$Man))), "U", "P")
       mod.mvar.GK <- asreml(fixed = GY ~ -1 + ManEnv,
                             random = ~ own(ManEnv, "vf", init, type, con):vm(Gen, K),
                             residual = ~ units,
                             data = d.train,
-                            trace = trace)
+                            trace = trace,
+                            weights = weight,
+                            family = asr_gaussian(dispersion = 1.0))
       
       pred.mvar.GK <- as.data.frame(mod.mvar.GK$coefficients$random)
       names(pred.mvar.GK) <- "predicted.value"
@@ -623,10 +653,11 @@ for (nc in n.checks) {
 end <- Sys.time()
 end - start
 
-saveRDS(results, sprintf("Briwecs/results/CV2/results.CV2.%d-%d.rds", datasets[1], datasets[length(datasets)]))
-saveRDS(comptimes, sprintf("Briwecs/results/CV2/comptimes.CV2.%d-%d.rds", datasets[1], datasets[length(datasets)]))
+saveRDS(results, sprintf("Briwecs/results/CV2/results.CV2.SE.%d-%d.rds", datasets[1], datasets[length(datasets)]))
+saveRDS(comptimes, sprintf("Briwecs/results/CV2/comptimes.CV2.SE.%d-%d.rds", datasets[1], datasets[length(datasets)]))
+saveRDS(cvsets, sprintf("Briwecs/results/CV2/cvsets.CV2.SE.%d-%d.rds", datasets[1], datasets[length(datasets)]))
 if (save.models) {
-  saveRDS(mod.fits, sprintf("Briwecs/results/CV2/modfits.CV2.%d-%d.rds", datasets[1], datasets[length(datasets)]))
+  saveRDS(mod.fits, sprintf("Briwecs/results/CV2/modfits.CV2.SE.%d-%d.rds", datasets[1], datasets[length(datasets)]))
 }
 
 

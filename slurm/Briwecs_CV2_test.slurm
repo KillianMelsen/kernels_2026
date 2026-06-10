@@ -15,7 +15,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=16G
-#SBATCH --array=1-25
+#SBATCH --array=1
 
 #-----------------------------Environment, Operations and Job steps----
 # Modules
