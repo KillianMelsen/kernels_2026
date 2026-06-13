@@ -654,11 +654,11 @@ for (nc in n.checks) {
 end <- Sys.time()
 end - start
 
-saveRDS(results, sprintf("DROPS/results/CV2/results.CV2.%d-%d.rds", datasets[1], datasets[length(datasets)]))
-saveRDS(comptimes, sprintf("DROPS/results/CV2/comptimes.CV2.%d-%d.rds", datasets[1], datasets[length(datasets)]))
+saveRDS(results, sprintf("DROPS/results/CV2/results.CV2.SE.%d-%d.rds", datasets[1], datasets[length(datasets)]))
+saveRDS(comptimes, sprintf("DROPS/results/CV2/comptimes.CV2.SE.%d-%d.rds", datasets[1], datasets[length(datasets)]))
 saveRDS(cvsets, sprintf("DROPS/results/CV2/cvsets.CV2.SE.%d-%d.rds", datasets[1], datasets[length(datasets)]))
 if (save.models) {
-  saveRDS(mod.fits, sprintf("DROPS/results/CV2/modfits.CV2.%d-%d.rds", datasets[1], datasets[length(datasets)]))
+  saveRDS(mod.fits, sprintf("DROPS/results/CV2/modfits.CV2.SE.%d-%d.rds", datasets[1], datasets[length(datasets)]))
 }
 
 
