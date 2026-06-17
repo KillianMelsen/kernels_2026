@@ -2,7 +2,7 @@
 
 library(ggplot2)
 library(patchwork)
-results <- readRDS("DROPS/results/CV2/results.CV2.1-150.rds")
+results <- readRDS("DROPS/results/CV2/results.CV2.SE.1-150.rds")
 means <- aggregate(results, cbind(cor_pearson, RMSE) ~ Checks + Model + Man, FUN = mean)
 SEs <- aggregate(results, cbind(cor_pearson, RMSE) ~ Checks + Model + Man, FUN = function(x) sd(x)/sqrt(length(x)))
 names(SEs)[4:5] <- c("SE_cor_pearson", "SE_RMSE")
@@ -40,7 +40,7 @@ p1 <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correlat
   geom_line(linewidth = 1.5) +
   geom_point(size = 2) +
   theme_classic(base_size = 18) +
-  ylab(NULL) + ylim(c(0.548, 0.65)) +
+  ylab(NULL) + #ylim(c(0.545, 0.70)) +
   xlab(NULL) +
   scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B")) +
   scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B")) +
@@ -71,7 +71,7 @@ ggsave(filename = "plots/DROPS_CV2.png", dpi = 300, width = 32, height = 32, uni
 
 # Plotting per environment:
 rm(list = ls())
-results <- readRDS("DROPS/results/CV2/results.CV2.1-150.rds")
+results <- readRDS("DROPS/results/CV2/results.CV2.SE.1-150.rds")
 means <- aggregate(results, cbind(cor_pearson, RMSE) ~ Checks + Model + Man + Env, FUN = mean)
 SEs <- aggregate(results, cbind(cor_pearson, RMSE) ~ Checks + Model + Man + Env, FUN = function(x) sd(x)/sqrt(length(x)))
 names(SEs)[5:6] <- c("SE_cor_pearson", "SE_RMSE")
