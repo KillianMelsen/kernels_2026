@@ -4,16 +4,19 @@ trace <- TRUE
 
 # Seed:
 set.seed(1994)
-envs <- levels(readRDS("Briwecs/data/datalist.SE.rds")$ydata$Env)
+envs <- levels(readRDS("DROPS/data/ydata.SE.rds")$Env)
 
 # Loading kinship, env. correlation matrix and full data:
-datalist <- readRDS("Briwecs/data/datalist.SE.rds")
-d.full <- datalist$ydata
+d.full <- readRDS("DROPS/data/ydata.SE.rds")
+# datalist <- readRDS("Briwecs/data/datalist.SE.rds")
+# d.full <- datalist$ydata
 
 # Kinship and environmental matrices:
-K <- readRDS("Briwecs/data/K.SE.rds")[levels(d.full$Gen), levels(d.full$Gen)]
-EC <- datalist$EC[levels(d.full$Env), levels(d.full$Env)]
-ED <- datalist$ED[levels(d.full$Env), levels(d.full$Env)]
+K <- readRDS("DROPS/data/K.SE.rds")[levels(d.full$Gen), levels(d.full$Gen)]
+# EC <- datalist$EC[levels(d.full$Env), levels(d.full$Env)]
+# ED <- datalist$ED[levels(d.full$Env), levels(d.full$Env)]
+EC <- readRDS("DROPS/data/EC.SE.rds")[levels(d.full$Env), levels(d.full$Env)]
+ED <- readRDS("DROPS/data/ED.SE.rds")[levels(d.full$Env), levels(d.full$Env)]
 
 vars.init.mv <- aggregate(d.full, GY ~ ManEnv, FUN = function(x) var(x) / 10)
 vars.init.mv <- vars.init.mv$GY[match(levels(d.full$ManEnv), vars.init.mv$ManEnv)]
@@ -135,7 +138,9 @@ vf <- function(order, kappa) {
     tmp[dk] <- 1 / tmp[dk]
     tmp <- outer(tmp, tmp)
     tmp[dk, dk] <- 1
-    deriv <- 0.5 * I * kronecker(tmp * Rm, exp(-kappa[4] * ED))
+    tmp <- kronecker(tmp, matrix(1, nrow(ED), ncol(ED)))
+    deriv <- 0.5 * I * tmp * R
+    # deriv <- 0.5 * I * kronecker(tmp * Rm, exp(-kappa[4] * ED))
     deriv[((dk - 1) * nrow(ED) + 1):(dk * nrow(ED)), ((dk - 1) * nrow(ED) + 1):(dk * nrow(ED))] <-
       deriv[((dk - 1) * nrow(ED) + 1):(dk * nrow(ED)), ((dk - 1) * nrow(ED) + 1):(dk * nrow(ED))] * 2
     varderivs[[dk]] <- deriv
