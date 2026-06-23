@@ -2,39 +2,54 @@ library(asreml)
 library(ggplot2)
 asreml.options(workspace = "5000mb", pworkspace = "5000mb", maxit = 50)
 set.seed(1997)
-envs <- levels(readRDS("Briwecs/data/datalist.rds")$ydata$Env)
+envs <- levels(readRDS("Briwecs/data/datalist.SE.rds")$ydata$Env)
 
 # Loading kinship, env. correlation matrix and full data:
-d.full <- readRDS("Briwecs/data/datalist.rds")$ydata
-d.full <- droplevels(d.full[d.full$Env %in% envs, c("Env", "Man", "Gen", "GY")])
-d.full$EnvGen <- as.factor(paste(d.full$Env, d.full$Gen, sep = ":"))
-d.full$ManGen <- as.factor(paste(d.full$Man, d.full$Gen, sep = ":"))
-d.full$ManEnv <- as.factor(paste(d.full$Man, d.full$Env, sep = ":"))
-d.full$ManEnvGen <- as.factor(paste(d.full$Man, d.full$Env, d.full$Gen, sep = ":"))
+d.full <- readRDS("Briwecs/data/datalist.SE.rds")$ydata
+# d.full <- droplevels(d.full[d.full$Env %in% envs, c("Env", "Man", "Gen", "GY")])
+# d.full$EnvGen <- as.factor(paste(d.full$Env, d.full$Gen, sep = ":"))
+# d.full$ManGen <- as.factor(paste(d.full$Man, d.full$Gen, sep = ":"))
+# d.full$ManEnv <- as.factor(paste(d.full$Man, d.full$Env, sep = ":"))
+# d.full$ManEnvGen <- as.factor(paste(d.full$Man, d.full$Env, d.full$Gen, sep = ":"))
 d.full$ManEnv2 <- d.full$ManEnv
 
 # Kinship and environmental matrices:
-K <- readRDS("Briwecs/data/K.rds")[levels(d.full$Gen), levels(d.full$Gen)]
-EC <- readRDS("Briwecs/data/datalist.rds")$EC[levels(d.full$Env), levels(d.full$Env)]
-ED <- readRDS("Briwecs/data/datalist.rds")$ED[levels(d.full$Env), levels(d.full$Env)]
+K <- readRDS("Briwecs/data/K.SE.rds")[levels(d.full$Gen), levels(d.full$Gen)]
+EC <- readRDS("Briwecs/data/datalist.SE.rds")$EC[levels(d.full$Env), levels(d.full$Env)]
+ED <- readRDS("Briwecs/data/datalist.SE.rds")$ED[levels(d.full$Env), levels(d.full$Env)]
 
 # Results structure ====
-results <- expand.grid(Model = c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK"),
+results <- expand.grid(Model = c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK", "MB-SV-GK", "MB-MV-GK"),
                        Management = levels(d.full$Man),
                        Environment = levels(d.full$Env),
                        Vge = NA,
                        Vlof = NA,
                        Ve = NA)
 
+# Residual variances (weights = reciprocals of known variances):
+resvars <- aggregate(d.full, weight ~ Man + Env, FUN = function(x) mean(1 / x))
+for (m in levels(d.full$Man)) {
+  for (e in levels(d.full$Env)) {
+    results[results$Management == m & results$Environment == e, "Ve"] <- resvars[resvars$Man == m & resvars$Env == e, "weight"]
+  }
+}
+
+# Starting values for kernel models:
+vars.init.mv <- aggregate(d.full, GY ~ ManEnv, FUN = function(x) var(x) / 10)
+vars.init.mv <- vars.init.mv$GY[match(levels(d.full$ManEnv), vars.init.mv$ManEnv)]
+vars.init.sv <- rep(var(na.omit(d.full$GY)) / 20, 2)
+
 # ADD ====
 mod.ADD <- asreml(GY ~ -1 + ManEnv,
                   random = ~ vm(Gen, K) + diag(ManEnv):vm(Gen, K),
                   residual = ~ units,
                   data = d.full,
-                  trace = TRUE)
+                  trace = TRUE,
+                  weights = weight,
+                  family = asr_gaussian(dispersion = 1.0))
 
 results[results$Model == "ADD", "Vge"] <- summary(mod.ADD)$varcomp[1, "component"]
-results[results$Model == "ADD", "Ve"] <- summary(mod.ADD)$varcomp[nrow(summary(mod.ADD)$varcomp), "component"]
+# results[results$Model == "ADD", "Ve"] <- summary(mod.ADD)$varcomp[nrow(summary(mod.ADD)$varcomp), "component"]
 for (i in 2:(nrow(summary(mod.ADD)$varcomp) - 1)) {
   management <- gsub(".*_([HL]N):(.*)", "\\1", rownames(summary(mod.ADD)$varcomp)[i])
   environment <- gsub(".*_([HL]N):(.*)", "\\2", rownames(summary(mod.ADD)$varcomp)[i])
@@ -46,7 +61,9 @@ mod.FA1 <- asreml(GY ~ -1 + ManEnv,
                   random = ~ fa(ManEnv, 1):vm(Gen, K),
                   residual = ~ units,
                   data = d.full,
-                  trace = TRUE)
+                  trace = TRUE,
+                  weights = weight,
+                  family = asr_gaussian(dispersion = 1.0))
 
 PSI <- summary(mod.FA1)$varcomp[1:28, "component"]
 names(PSI) <- gsub(".*!(.*)!var", "\\1", rownames(summary(mod.FA1)$varcomp)[1:28])
@@ -60,14 +77,16 @@ for (i in 1:28) {
   results[results$Model == "FA-1" & results$Management == man & results$Environment == env, "Vge"] <- LLvars[i]
   results[results$Model == "FA-1" & results$Management == man & results$Environment == env, "Vlof"] <- PSI[i]
 }
-results[results$Model == "FA-1", "Ve"] <- summary(mod.FA1)$varcomp[nrow(summary(mod.FA1)$varcomp), "component"]
+# results[results$Model == "FA-1", "Ve"] <- summary(mod.FA1)$varcomp[nrow(summary(mod.FA1)$varcomp), "component"]
 
 # FA2 ====
 mod.FA2 <- asreml(GY ~ -1 + ManEnv,
                   random = ~ fa(ManEnv, 2):vm(Gen, K),
                   residual = ~ units,
                   data = d.full,
-                  trace = TRUE)
+                  trace = TRUE,
+                  weights = weight,
+                  family = asr_gaussian(dispersion = 1.0))
 
 PSI <- summary(mod.FA2)$varcomp[1:28, "component"]
 names(PSI) <- gsub(".*!(.*)!var", "\\1", rownames(summary(mod.FA2)$varcomp)[1:28])
@@ -82,14 +101,16 @@ for (i in 1:28) {
   results[results$Model == "FA-2" & results$Management == man & results$Environment == env, "Vge"] <- LLvars[i]
   results[results$Model == "FA-2" & results$Management == man & results$Environment == env, "Vlof"] <- PSI[i]
 }
-results[results$Model == "FA-2", "Ve"] <- summary(mod.FA2)$varcomp[nrow(summary(mod.FA2)$varcomp), "component"]
+# results[results$Model == "FA-2", "Ve"] <- summary(mod.FA2)$varcomp[nrow(summary(mod.FA2)$varcomp), "component"]
 
 # FA3 ====
 mod.FA3 <- asreml(GY ~ -1 + ManEnv,
                   random = ~ fa(ManEnv, 3):vm(Gen, K),
                   residual = ~ units,
                   data = d.full,
-                  trace = TRUE)
+                  trace = TRUE,
+                  weights = weight,
+                  family = asr_gaussian(dispersion = 1.0))
 
 PSI <- summary(mod.FA3)$varcomp[1:28, "component"]
 names(PSI) <- gsub(".*!(.*)!var", "\\1", rownames(summary(mod.FA3)$varcomp)[1:28])
@@ -105,7 +126,7 @@ for (i in 1:28) {
   results[results$Model == "FA-3" & results$Management == man & results$Environment == env, "Vge"] <- LLvars[i]
   results[results$Model == "FA-3" & results$Management == man & results$Environment == env, "Vlof"] <- PSI[i]
 }
-results[results$Model == "FA-3", "Ve"] <- summary(mod.FA3)$varcomp[nrow(summary(mod.FA3)$varcomp), "component"]
+# results[results$Model == "FA-3", "Ve"] <- summary(mod.FA3)$varcomp[nrow(summary(mod.FA3)$varcomp), "component"]
 
 # Single-var relmat model version 2 ====
 vf <- function(order, kappa) {
@@ -146,18 +167,20 @@ vf <- function(order, kappa) {
   return(c(list(V), varderivs, list(dkcorr)))
 }
 
-init <- c(0.1, 0.1, 0.1)
+init <- c(vars.init.sv, 0.5)
 type <- c("V", "V", "R")
 con <- c("P", "P", "U")
 mod.svar.EC <- asreml(fixed = GY ~ -1 + ManEnv,
                       random = ~ own(ManEnv, "vf", init, type, con):vm(Gen, K) + diag(ManEnv2):vm(Gen, K),
                       residual = ~ units,
                       data = d.full,
-                      trace = TRUE)
+                      trace = TRUE,
+                      weights = weight,
+                      family = asr_gaussian(dispersion = 1.0))
 
 results[results$Model == "SV-LK" & results$Management == "HN", "Vge"] <- summary(mod.svar.EC)$varcomp[1, "component"]
 results[results$Model == "SV-LK" & results$Management == "LN", "Vge"] <- summary(mod.svar.EC)$varcomp[2, "component"]
-results[results$Model == "SV-LK", "Ve"] <- summary(mod.svar.EC)$varcomp[nrow(summary(mod.svar.EC)$varcomp), "component"]
+# results[results$Model == "SV-LK", "Ve"] <- summary(mod.svar.EC)$varcomp[nrow(summary(mod.svar.EC)$varcomp), "component"]
 for (i in 4:(nrow(summary(mod.svar.EC)$varcomp) - 1)) {
   management <- gsub(".*_([HL]N):(.*)", "\\1", rownames(summary(mod.svar.EC)$varcomp)[i])
   environment <- gsub(".*_([HL]N):(.*)", "\\2", rownames(summary(mod.svar.EC)$varcomp)[i])
@@ -212,18 +235,20 @@ vf <- function(order, kappa) {
   return(c(list(V), varderivs, list(dkcorr, dkbw)))
 }
 
-init <- c(0.1, 0.1, 0.1, 0.1)
+init <- c(vars.init.sv, 0.5, 0.1)
 type <- c("V", "V", "R", "V")
 con <- c("P", "P", "U", "P")
 mod.svar.GK <- asreml(fixed = GY ~ -1 + ManEnv,
                       random = ~ own(ManEnv, "vf", init, type, con):vm(Gen, K) + diag(ManEnv2):vm(Gen, K),
                       residual = ~ units,
                       data = d.full,
-                      trace = TRUE)
+                      trace = TRUE,
+                      weights = weight,
+                      family = asr_gaussian(dispersion = 1.0))
 
 results[results$Model == "SV-GK" & results$Management == "HN", "Vge"] <- summary(mod.svar.GK)$varcomp[1, "component"]
 results[results$Model == "SV-GK" & results$Management == "LN", "Vge"] <- summary(mod.svar.GK)$varcomp[2, "component"]
-results[results$Model == "SV-GK", "Ve"] <- summary(mod.svar.GK)$varcomp[nrow(summary(mod.svar.GK)$varcomp), "component"]
+# results[results$Model == "SV-GK", "Ve"] <- summary(mod.svar.GK)$varcomp[nrow(summary(mod.svar.GK)$varcomp), "component"]
 for (i in 5:(nrow(summary(mod.svar.GK)$varcomp) - 1)) {
   management <- gsub(".*_([HL]N):(.*)", "\\1", rownames(summary(mod.svar.GK)$varcomp)[i])
   environment <- gsub(".*_([HL]N):(.*)", "\\2", rownames(summary(mod.svar.GK)$varcomp)[i])
@@ -273,14 +298,16 @@ vf <- function(order, kappa) {
   return(c(list(V), varderivs, list(dkrm)))
 }
 
-init <- c(rep(0.1, nrow(EC) * length(levels(d.full$Man))), 0.1)
+init <- c(vars.init.mv, 0.5)
 type <- c(rep("V", nrow(EC) * length(levels(d.full$Man))), "R")
 con <- c(rep("P", nrow(EC) * length(levels(d.full$Man))), "U")
 mod.mvar.EC <- asreml(fixed = GY ~ -1 + ManEnv,
                       random = ~ own(ManEnv, "vf", init, type):vm(Gen, K) + diag(ManEnv2):vm(Gen, K),
                       residual = ~ units,
                       data = d.full,
-                      trace = TRUE)
+                      trace = TRUE,
+                      weights = weight,
+                      family = asr_gaussian(dispersion = 1.0))
 
 genvars <- summary(mod.mvar.EC)$varcomp[1:28, "component"]
 names(genvars) <- levels(d.full$ManEnv)
@@ -289,7 +316,7 @@ for (i in 1:28) {
   env <- gsub("(..):(.*)", "\\2", names(genvars)[i])
   results[results$Model == "MV-LK" & results$Management == man & results$Environment == env, "Vge"] <- genvars[i]
 }
-results[results$Model == "MV-LK", "Ve"] <- summary(mod.mvar.EC)$varcomp[nrow(summary(mod.mvar.EC)$varcomp), "component"]
+# results[results$Model == "MV-LK", "Ve"] <- summary(mod.mvar.EC)$varcomp[nrow(summary(mod.mvar.EC)$varcomp), "component"]
 for (i in 30:(nrow(summary(mod.mvar.EC)$varcomp) - 1)) {
   management <- gsub(".*_([HL]N):(.*)", "\\1", rownames(summary(mod.mvar.EC)$varcomp)[i])
   environment <- gsub(".*_([HL]N):(.*)", "\\2", rownames(summary(mod.mvar.EC)$varcomp)[i])
@@ -343,14 +370,16 @@ vf <- function(order, kappa) {
   return(c(list(V), varderivs, list(dkrm, dkh)))
 }
 
-init <- c(rep(0.1, nrow(ED) * length(levels(d.full$Man))), 0.1, 0.1)
+init <- c(vars.init.mv, 0.5, 0.1)
 type <- c(rep("V", nrow(ED) * length(levels(d.full$Man))), "R", "V")
 con <- c(rep("P", nrow(ED) * length(levels(d.full$Man))), "U", "P")
 mod.mvar.GK <- asreml(fixed = GY ~ -1 + ManEnv,
                       random = ~ own(ManEnv, "vf", init, type, con):vm(Gen, K) + diag(ManEnv2):vm(Gen, K),
                       residual = ~ units,
                       data = d.full,
-                      trace = TRUE)
+                      trace = TRUE,
+                      weights = weight,
+                      family = asr_gaussian(dispersion = 1.0))
 
 genvars <- summary(mod.mvar.GK)$varcomp[1:28, "component"]
 names(genvars) <- levels(d.full$ManEnv)
@@ -359,15 +388,176 @@ for (i in 1:28) {
   env <- gsub("(..):(.*)", "\\2", names(genvars)[i])
   results[results$Model == "MV-GK" & results$Management == man & results$Environment == env, "Vge"] <- genvars[i]
 }
-results[results$Model == "MV-GK", "Ve"] <- summary(mod.mvar.GK)$varcomp[nrow(summary(mod.mvar.GK)$varcomp), "component"]
+# results[results$Model == "MV-GK", "Ve"] <- summary(mod.mvar.GK)$varcomp[nrow(summary(mod.mvar.GK)$varcomp), "component"]
 for (i in 31:(nrow(summary(mod.mvar.GK)$varcomp) - 1)) {
   management <- gsub(".*_([HL]N):(.*)", "\\1", rownames(summary(mod.mvar.GK)$varcomp)[i])
   environment <- gsub(".*_([HL]N):(.*)", "\\2", rownames(summary(mod.mvar.GK)$varcomp)[i])
   results[results$Model == "MV-GK" & results$Management == management & results$Environment == environment, "Vlof"] <- summary(mod.mvar.GK)$varcomp$component[i]
 }
+
+# Multi-bandwidth single-var Gaussian kernel model ====
+vf <- function(order, kappa) {
+  # kappa[1] = variance of M1
+  # kappa[2] = variance of M2
+  # kappa[3] = correlation between M1 and M2
+  # kappa[4] = bandwidth parameter of the Gaussian kernel for Env at M1
+  # kappa[5] = bandwidth parameter of the Gaussian kernel for Env at M2
+  # kappa[6] = bandwidth parameter of the Gaussian kernel for Env at M1:M2
+  # The correlation matrix of the Man levels (specify manually!):
+  Rm <- matrix(1, 2, 2)
+  Rm[1, 2] <- Rm[2, 1] <- kappa[3]
+  S <- outer(sqrt(kappa[1:ncol(Rm)]), sqrt(kappa[1:ncol(Rm)]))
+  S <- kronecker(S, matrix(1, nrow(ED), ncol(ED)))
   
-saveRDS(results, "BRIWECS_LOF/results_BRIWECS_LOF.rds")
-results <- readRDS("BRIWECS_LOF/results_BRIWECS_LOF.rds")
+  # The full covariance matrix:
+  # R <- kronecker(Rm, exp(-kappa[order + 2] * ED))
+  R <- rbind(cbind(exp(-kappa[4] * ED),               Rm[1, 2] * exp(-kappa[6] * ED)),
+             cbind(Rm[2, 1] * exp(-kappa[6] * ED),    exp(-kappa[5] * ED)))
+  V <- S * R
+  
+  # Derivative wrt kappa[3]
+  # Indicator matrix of where kappa[3] is present:
+  I <- matrix(1, nrow(Rm), ncol(Rm))
+  diag(I) = 0
+  I <- kronecker(I, matrix(1, nrow(ED), ncol(ED)))
+  dkrm <- (S * I) * kronecker(matrix(1, nrow(Rm), ncol(Rm)), exp(-kappa[6] * ED))
+  
+  # Derivative wrt kappa[4]
+  dkh1 <- S * kronecker(matrix(c(1, 0, 0, 0), 2, 2), -ED * exp(-kappa[4] * ED))
+  
+  # Derivative wrt kappa[5]
+  dkh2 <- S * kronecker(matrix(c(0, 0, 0, 1), 2, 2), -ED * exp(-kappa[5] * ED))
+  
+  # Derivative wrt kappa[6]
+  dkh3 <- S * kronecker(matrix(c(0, kappa[3], kappa[3], 0), 2, 2), -ED * exp(-kappa[6] * ED))
+  
+  # Derivatives wrt kappa[1] and kappa[2] (variances)
+  varderivs <- vector("list", ncol(Rm))
+  for (dk in 1:ncol(Rm)) {
+    # Indicator matrix of where kappa[dk] is present:
+    I <- matrix(0, nrow(Rm), ncol(Rm))
+    I[dk,] <- I[, dk] <- 1
+    I <- kronecker(I, matrix(1, nrow(ED), ncol(ED)))
+    tmp <- sqrt(kappa[1:ncol(Rm)])
+    tmp[dk] <- 1 / tmp[dk]
+    tmp <- outer(tmp, tmp)
+    tmp[dk, dk] <- 1
+    tmp <- kronecker(tmp, matrix(1, nrow(ED), ncol(ED)))
+    deriv <- 0.5 * I * tmp * R
+    # deriv <- 0.5 * I * kronecker(tmp * Rm, exp(-kappa[4] * ED))
+    deriv[((dk - 1) * nrow(ED) + 1):(dk * nrow(ED)), ((dk - 1) * nrow(ED) + 1):(dk * nrow(ED))] <-
+      deriv[((dk - 1) * nrow(ED) + 1):(dk * nrow(ED)), ((dk - 1) * nrow(ED) + 1):(dk * nrow(ED))] * 2
+    varderivs[[dk]] <- deriv
+  }
+  # cat(kappa, "\n\n")
+  return(c(list(V), varderivs, list(dkrm, dkh1, dkh2, dkh3)))
+}
+
+init <- c(80, 50, 0.90, 0.14, 0.15, 0.16)
+type <- c("V", "V", "R", "V", "V", "V")
+con <- c("P", "P", "U", "P", "P", "P")
+mod.mb.svar.GK <- asreml(fixed = GY ~ -1 + ManEnv,
+                         random = ~ own(ManEnv, "vf", init, type, con):vm(Gen, K) + diag(ManEnv2):vm(Gen, K),
+                         residual = ~ units,
+                         data = d.full,
+                         trace = TRUE,
+                         weights = weight,
+                         family = asr_gaussian(dispersion = 1.0))
+
+results[results$Model == "MB-SV-GK" & results$Management == "HN", "Vge"] <- summary(mod.mb.svar.GK)$varcomp[1, "component"]
+results[results$Model == "MB-SV-GK" & results$Management == "LN", "Vge"] <- summary(mod.mb.svar.GK)$varcomp[2, "component"]
+# results[results$Model == "MB-SV-GK", "Ve"] <- summary(mod.mb.svar.GK)$varcomp[nrow(summary(mod.mb.svar.GK)$varcomp), "component"]
+for (i in 7:(nrow(summary(mod.mb.svar.GK)$varcomp) - 1)) {
+  management <- gsub(".*_([HL]N):(.*)", "\\1", rownames(summary(mod.mb.svar.GK)$varcomp)[i])
+  environment <- gsub(".*_([HL]N):(.*)", "\\2", rownames(summary(mod.mb.svar.GK)$varcomp)[i])
+  results[results$Model == "MB-SV-GK" & results$Management == management & results$Environment == environment, "Vlof"] <- summary(mod.mb.svar.GK)$varcomp$component[i]
+}
+
+# Multi-bandwidth multi-var Gaussian kernel model ====
+vf <- function(order, kappa) {
+  # kappa[1] = variance of M1:E1
+  # kappa[2] = variance of M1:E2
+  #   ...
+  # kappa[p * q] = variance of Mp:Eq
+  # kappa[p * q + 1] = correlation between M1 and M2
+  # kappa[p * q + 2] = bandwidth parameter of the Gaussian kernel for Env at M1
+  # kappa[p * q + 3] = bandwidth parameter of the Gaussian kernel for Env at M2
+  # kappa[p * q + 4] = bandwidth parameter of the Gaussian kernel for Env at M1:M2
+  # Number of managements:
+  n.mans <- order / nrow(ED)
+  
+  # The correlation matrix of the Man levels (specify manually!):
+  Rm <- matrix(1, 2, 2)
+  Rm[1, 2] <- Rm[2, 1] <- kappa[order + 1]
+  
+  # The full covariance matrix:
+  S <- outer(sqrt(kappa[1:order]), sqrt(kappa[1:order]))
+  # R <- kronecker(Rm, exp(-kappa[order + 2] * ED))
+  R <- rbind(cbind(exp(-kappa[order + 2] * ED),               Rm[1, 2] * exp(-kappa[order + 4] * ED)),
+             cbind(Rm[2, 1] * exp(-kappa[order + 4] * ED),    exp(-kappa[order + 3] * ED)))
+  V <- S * R
+  
+  # Derivative wrt kappa[p * q + 1]
+  # Indicator matrix of where kappa[p * q + 1] is present:
+  I <- matrix(1, nrow(Rm), ncol(Rm))
+  diag(I) = 0
+  I <- kronecker(I, matrix(1, nrow(ED), ncol(ED)))
+  dkrm <- (S * I) * kronecker(matrix(1, nrow(Rm), ncol(Rm)), exp(-kappa[order + 4] * ED))
+  
+  # Derivative wrt kappa[p * q + 2]
+  dkh1 <- S * kronecker(matrix(c(1, 0, 0, 0), 2, 2), -ED * exp(-kappa[order + 2] * ED))
+  
+  # Derivative wrt kappa[p * q + 3]
+  dkh2 <- S * kronecker(matrix(c(0, 0, 0, 1), 2, 2), -ED * exp(-kappa[order + 3] * ED))
+  
+  # Derivative wrt kappa[p * q + 4]
+  dkh3 <- S * kronecker(matrix(c(0, kappa[order + 1], kappa[order + 1], 0), 2, 2), -ED * exp(-kappa[order + 4] * ED))
+  
+  # Derivatives wrt all variances
+  varderivs <- vector("list", order)
+  for (dk in 1:order) {
+    # Indicator matrix of where kappa[dk] is present:
+    I <- matrix(0, order, order)
+    I[dk,] <- I[, dk] <- 1
+    tmp <- sqrt(kappa[1:order])
+    tmp[dk] <- 1 / tmp[dk]
+    tmp <- outer(tmp, tmp)
+    tmp[dk, dk] <- 1
+    deriv <- 0.5 * I * tmp * R
+    deriv[dk, dk] <- 1
+    varderivs[[dk]] <- deriv
+  }
+  # cat(kappa, "\n\n")
+  return(c(list(V), varderivs, list(dkrm, dkh1, dkh2, dkh3)))
+}
+
+init <- c(vars.init.mv, 0.50, 0.10, 0.10, 0.10)
+type <- c(rep("V", nrow(ED) * length(levels(d.full$Man))), "R", "V", "V", "V")
+con <- c(rep("P", nrow(ED) * length(levels(d.full$Man))), "U", "P", "P", "P")
+mod.mb.mvar.GK <- asreml(fixed = GY ~ -1 + ManEnv,
+                         random = ~ own(ManEnv, "vf", init, type, con):vm(Gen, K) + diag(ManEnv2):vm(Gen, K),
+                         residual = ~ units,
+                         data = d.full,
+                         trace = TRUE,
+                         weights = weight,
+                         family = asr_gaussian(dispersion = 1.0))
+
+genvars <- summary(mod.mb.mvar.GK)$varcomp[1:28, "component"]
+names(genvars) <- levels(d.full$ManEnv)
+for (i in 1:28) {
+  man <- gsub("(..):(.*)", "\\1", names(genvars)[i])
+  env <- gsub("(..):(.*)", "\\2", names(genvars)[i])
+  results[results$Model == "MB-MV-GK" & results$Management == man & results$Environment == env, "Vge"] <- genvars[i]
+}
+# results[results$Model == "MB-MV-GK", "Ve"] <- summary(mod.mb.mvar.GK)$varcomp[nrow(summary(mod.mb.mvar.GK)$varcomp), "component"]
+for (i in 33:(nrow(summary(mod.mb.mvar.GK)$varcomp) - 1)) {
+  management <- gsub(".*_([HL]N):(.*)", "\\1", rownames(summary(mod.mb.mvar.GK)$varcomp)[i])
+  environment <- gsub(".*_([HL]N):(.*)", "\\2", rownames(summary(mod.mb.mvar.GK)$varcomp)[i])
+  results[results$Model == "MB-MV-GK" & results$Management == management & results$Environment == environment, "Vlof"] <- summary(mod.mb.mvar.GK)$varcomp$component[i]
+}
+
+saveRDS(results, "BRIWECS_LOF/results_BRIWECS_LOF_SE.rds")
+results <- readRDS("BRIWECS_LOF/results_BRIWECS_LOF_SE.rds")
 library(ggplot2)
 library(patchwork)
 
@@ -377,8 +567,16 @@ results2 <- as.data.frame(tidyr::pivot_longer(results, 4:6, names_to = "Componen
 results3 <- as.data.frame(tidyr::pivot_longer(aggregate(results, cbind(`(Latent) Covariables`, LOF, Residual) ~ Model + Management, FUN = mean), 3:5, names_to = "Component", values_to = "Variance"))
 results2$Component <- factor(results2$Component, levels = c("(Latent) Covariables", "LOF", "Residual"), labels = c("Structured effect", "Lack of fit effect", "Residual effect"))
 results3$Component <- factor(results3$Component, levels = c("(Latent) Covariables", "LOF", "Residual"), labels = c("Structured effect", "Lack of fit effect", "Residual effect"))
-results2 <- droplevels(results2[results2$Model %in% c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK"),])
-results3 <- droplevels(results3[results3$Model %in% c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK"),])
+results2 <- droplevels(results2[results2$Model %in% c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK", "MB-SV-GK", "MB-MV-GK"),])
+results3 <- droplevels(results3[results3$Model %in% c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK", "MB-SV-GK", "MB-MV-GK"),])
+
+results2$Model <- factor(as.character(results2$Model),
+                         c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MB-SV-GK", "MV-LK", "MV-GK", "MB-MV-GK"),
+                         c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MB-SV-GK", "MV-LK", "MV-GK", "MB-MV-GK"))
+
+results3$Model <- factor(as.character(results3$Model),
+                         c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MB-SV-GK", "MV-LK", "MV-GK", "MB-MV-GK"),
+                         c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MB-SV-GK", "MV-LK", "MV-GK", "MB-MV-GK"))
 
 levels(results2$Management) <- c("High Nitrogen", "Low Nitrogen")
 levels(results3$Management) <- c("High Nitrogen", "Low Nitrogen")
@@ -454,7 +652,7 @@ var <- ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
   ylim(c(0, 115))
 var
 var / perc
-ggsave(filename = "plots/BRIWECS_LOF_Averaged_numeric_combined.png", dpi = 300, width = 32, height = 20, units = "cm")
+ggsave(filename = "plots/BRIWECS_LOF_Averaged_numeric_combined_SE.png", dpi = 300, width = 32, height = 20, units = "cm")
 
 ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment)[1:7],]), aes(fill = Component, y = Variance, x = Model)) +
   facet_grid(cols = vars(Management), rows = vars(Environment), scales = "free_y") +
@@ -467,7 +665,7 @@ ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment
                                         strip.text = element_text(size = 20),
                                         axis.title.y = element_text(size = 20),
                                         axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1.1))
-ggsave(filename = "plots/BRIWECS_LOF_perEnv_numeric_A.png", dpi = 300, width = 32, height = 48, units = "cm")
+ggsave(filename = "plots/BRIWECS_LOF_perEnv_numeric_SE_A.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment)[8:14],]), aes(fill = Component, y = Variance, x = Model)) +
   facet_grid(cols = vars(Management), rows = vars(Environment), scales = "free_y") +
@@ -480,7 +678,7 @@ ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment
                                         strip.text = element_text(size = 20),
                                         axis.title.y = element_text(size = 20),
                                         axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1.1))
-ggsave(filename = "plots/BRIWECS_LOF_perEnv_numeric_B.png", dpi = 300, width = 32, height = 48, units = "cm")
+ggsave(filename = "plots/BRIWECS_LOF_perEnv_numeric_SE_B.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 ## Text of section 3.2.2 ====
 # Heritability:
