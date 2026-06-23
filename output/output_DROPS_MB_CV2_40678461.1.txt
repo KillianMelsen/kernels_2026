@@ -1,6 +1,0 @@
-Online License checked out Tue Jun 23 14:04:29 2026
-Fitting nc = 10 run = 1, multi bandwidth, single var Gaussian kernel model...
-999.744 sec elapsed
-Fitting nc = 10 run = 1, multi bandwidth, multi var Gaussian kernel model...
-1083.522 sec elapsed
-Time difference of 34.72817 mins

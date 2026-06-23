@@ -6,7 +6,7 @@ library(tictoc)
 asreml.options(workspace = "5000mb", pworkspace = "5000mb", maxit = 25)
 save.models <- FALSE
 trace <- FALSE
-arr.index <- 1
+arr.index <- 6
 arr.dim <- 15
 
 # Seed:
