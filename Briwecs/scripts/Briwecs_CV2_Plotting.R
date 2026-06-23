@@ -3,6 +3,8 @@
 library(ggplot2)
 library(patchwork)
 results <- readRDS("Briwecs/results/CV2/results.CV2.SE.1-250.rds")
+results.mb <- readRDS("Briwecs/results/CV2/results.MB.CV2.SE.1-250.rds")
+results <- rbind(results, results.mb)
 means <- aggregate(results, cbind(cor_pearson, RMSE) ~ Checks + Model + Man, FUN = mean)
 SEs <- aggregate(results, cbind(cor_pearson, RMSE) ~ Checks + Model + Man, FUN = function(x) sd(x)/sqrt(length(x)))
 names(SEs)[4:5] <- c("SE_cor_pearson", "SE_RMSE")

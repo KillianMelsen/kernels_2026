@@ -73,8 +73,8 @@ cvsets <- readRDS(sprintf("DROPS/results/CV2/cvsets.CV2.SE.%d-%d.rds", datasets[
 nc <- n.checks[1]
 run <- datasets[1]
 start <- Sys.time()
-for (nc in n.checks) {
-  for (run in datasets) {
+for (nc in c(10)) {
+  for (run in c(1)) {
     # Setting the training and test sets that were already randomly generated for the previous models:
     train.set <- cvsets[[sprintf("nc%d", nc)]][[sprintf("run%d", run)]]$train.set
     test.set <- cvsets[[sprintf("nc%d", nc)]][[sprintf("run%d", run)]]$test.set
@@ -146,7 +146,7 @@ for (nc in n.checks) {
           deriv[((dk - 1) * nrow(ED) + 1):(dk * nrow(ED)), ((dk - 1) * nrow(ED) + 1):(dk * nrow(ED))] * 2
         varderivs[[dk]] <- deriv
       }
-      cat(kappa, "\n\n")
+      # cat(kappa, "\n\n")
       return(c(list(V), varderivs, list(dkrm, dkh1, dkh2, dkh3)))
     }
     

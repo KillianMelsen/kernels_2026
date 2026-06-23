@@ -1,5 +1,0 @@
-Running "module reset". Resetting modules to system default. The following $MODULEPATH directories have been removed: None
-dos2unix: converting file ./Briwecs/scripts/Briwecs_CV2_MB_14.R to Unix format...
-Loading required package: Matrix
-Loading ASReml-R version 4.2
-
