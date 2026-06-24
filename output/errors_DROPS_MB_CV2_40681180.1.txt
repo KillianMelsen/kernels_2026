@@ -1,0 +1,6 @@
+Running "module reset". Resetting modules to system default. The following $MODULEPATH directories have been removed: None
+dos2unix: converting file ./DROPS/scripts/DROPS_CV2_MB_1.R to Unix format...
+Loading required package: Matrix
+Loading ASReml-R version 4.2
+
+There were 22 warnings (use warnings() to see them)
