@@ -581,6 +581,8 @@ results3$Model <- factor(as.character(results3$Model),
 levels(results2$Management) <- c("High Nitrogen", "Low Nitrogen")
 levels(results3$Management) <- c("High Nitrogen", "Low Nitrogen")
 
+
+
 # ggplot(results2, aes(fill = Component, y = Variance, x = Model)) +
 #   facet_grid(rows = vars(Environment), cols = vars(Management)) +
 #   geom_bar(position = "fill", stat = "identity") +

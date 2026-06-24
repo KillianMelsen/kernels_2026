@@ -3,6 +3,8 @@
 library(ggplot2)
 library(patchwork)
 results <- readRDS("DROPS/results/CV2/results.CV2.SE.1-150.rds")
+results.mb <- readRDS("DROPS/results/CV2/old_MB_results/results.MB.CV2.SE.1-150.rds")
+results <- rbind(results, results.mb)
 means <- aggregate(results, cbind(cor_pearson, RMSE) ~ Checks + Model + Man, FUN = mean)
 SEs <- aggregate(results, cbind(cor_pearson, RMSE) ~ Checks + Model + Man, FUN = function(x) sd(x)/sqrt(length(x)))
 names(SEs)[4:5] <- c("SE_cor_pearson", "SE_RMSE")
@@ -18,7 +20,7 @@ plotdata.long <- rbind(plotdata.corr, plotdata.rmse)
 plotdata.long$Model <- factor(plotdata.long$Model,
                               levels = levels(plotdata.long$Model),
                               labels = c("ADD", "FA-1", "FA-2", "FA-3",
-                                         "SV-LK", "SV-GK", "MV-LK", "MV-GK"))
+                                         "SV-LK", "SV-GK", "MV-LK", "MV-GK", "MB-SV-GK", "MB-MV-GK"))
 plotdata.long$Man <- factor(plotdata.long$Man, levels = levels(plotdata.long$Man), labels = c("Rain-fed", "Irrigated"))
 # ggplot(plotdata.long, aes(x = Checks, y = Value, color = Model)) +
 #   facet_wrap(vars(Measure, Man), ncol = 2, scales = "free") +
@@ -42,8 +44,8 @@ p1 <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correlat
   theme_classic(base_size = 18) +
   ylab(NULL) + #ylim(c(0.545, 0.70)) +
   xlab(NULL) +
-  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B")) +
-  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B")) +
+  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink", "purple")) +
+  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink", "purple")) +
   theme(legend.position = "none",
         strip.background = element_blank(),
         strip.text = element_text(size = 20),
@@ -57,8 +59,8 @@ p2 <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE",]), aes(x 
   theme_classic(base_size = 18) +
   ylab(NULL) +
   xlab("Number of checks") +
-  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B")) +
-  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B")) +
+  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink", "purple")) +
+  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink", "purple")) +
   theme(legend.position = "bottom",
         strip.background = element_blank(),
         strip.text = element_text(size = 20),
