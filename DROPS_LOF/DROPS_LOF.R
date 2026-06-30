@@ -743,31 +743,40 @@ ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment
                                         axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1.1))
 ggsave(filename = "plots/DROPS_LOF_perEnv_numeric_SE_B_extendedbaseline.png", dpi = 300, width = 32, height = 48, units = "cm")
 
-## Text of section 3.2.2 ====
-results$Total <- results$`(Latent) Covariables` + results$LOF + results$Residual
-results$Covariable_percentage <- results$`(Latent) Covariables` / results$Total
-results$LOF_percentage <- results$LOF / results$Total
-results$Residual_percentage <- results$Residual / results$Total
+## Text of section 3.1 ====
+tmp <- data.frame(Model = results.FVP$Model,
+                  Management = results.FVP$Management,
+                  Environment = results.FVP$Environment,
+                  LC = results.FVP$G,
+                  LOF = results.FVP$`G x M` + results.FVP$`G x E` + results.FVP$`G x E x M`,
+                  Residual = results.FVP$Residual)
+colnames(tmp) <- colnames(results)
+results4 <- rbind(results, tmp)
+
+results4$Total <- results4$`(Latent) Covariables` + results4$LOF + results4$Residual
+results4$Covariable_percentage <- results4$`(Latent) Covariables` / results4$Total
+results4$LOF_percentage <- results4$LOF / results4$Total
+results4$Residual_percentage <- results4$Residual / results4$Total
 
 # Average h2 per management:
-tmp <- aggregate(droplevels(results[results$Model != "ADD",]), cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ Management, FUN = mean)
+tmp <- aggregate(droplevels(results4[!(results4$Model %in% c("FVP", "ADD")),]), cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ Management, FUN = mean)
 tmp$h2 <- round((tmp$`(Latent) Covariables` + tmp$LOF) / (tmp$`(Latent) Covariables` + tmp$LOF + tmp$Residual), 2)
 tmp[, c("Management", "h2")]
 
 # Total genetic variance per management:
-tmp <- aggregate(droplevels(results[results$Model != "ADD",]), cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ Management, FUN = mean)
+tmp <- aggregate(droplevels(results4[!(results4$Model %in% c("FVP", "ADD")),]), cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ Management, FUN = mean)
 tmp$GenTotal <- round(tmp$`(Latent) Covariables` + tmp$LOF, 3)
 tmp[, c("Management", "GenTotal")]
 
 # Percentages of genetic variance explained by the environmental covariables per model:
-tmp <- aggregate(results, cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ Model, FUN = mean)
+tmp <- aggregate(results4, cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ Model, FUN = mean)
 tmp$PercCov <- round(tmp$`(Latent) Covariables` / (tmp$`(Latent) Covariables` + tmp$LOF), 2)
 tmp[, c("Model", "PercCov")]
 
 # Percentages of genetic variance explained by the environmental covariables per management:
-results$type <- as.factor(ifelse(results$Model %in% paste0("FA-", 1:3), "FA", ifelse(results$Model == "ADD", "ADD", "Kernel")))
-tmp <- aggregate(results, cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ type + Management, FUN = mean)
-tmp$PercCov <- round(tmp$`(Latent) Covariables` / (tmp$`(Latent) Covariables` + tmp$LOF), 2)
-tmp[, c("type", "Management", "PercCov")]
+# results4$type <- as.factor(ifelse(results4$Model %in% paste0("FA-", 1:3), "FA", ifelse(results4$Model %in% c("FVP", "ADD"), ifelse(results4$Model == "ADD", "ADD", "FVP"), "Kernel")))
+# tmp <- aggregate(results4, cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ type + Management, FUN = mean)
+# tmp$PercCov <- round(tmp$`(Latent) Covariables` / (tmp$`(Latent) Covariables` + tmp$LOF), 2)
+# tmp[, c("type", "Management", "PercCov")]
 
 

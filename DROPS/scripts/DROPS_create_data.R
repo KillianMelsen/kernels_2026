@@ -15,20 +15,109 @@ if (!("K.rds" %in% list.files("DROPS/data/"))) {
   K <- readRDS("DROPS/data/K.rds")
 }
 
-# Loading and subsetting yield data:
-ydata <- read.csv("DROPS/raw_data/2b-GrainYield_components_BLUEs_level-1.csv")
-ydata <- ydata[which(ydata$Variety_ID %in% rownames(K)),]
+# Loading plot-level data:
+ydata <- read.csv("DROPS/raw_data/2a-GrainYield_components_Plot_level.csv")
 
-# Find the trials that have all 246 varieties and subset to those:
-keep <- names(table(ydata$Experiment))[which(table(ydata$Experiment) == 246)]
-ydata <- ydata[which(ydata$Experiment %in% keep),]; rm(keep)
-ydata <- droplevels(ydata[ydata$Experiment != "Deb13R",]) # Does not make a lot of difference to exclude it for kernel computation already.
+# Subsetting to relevant columns:
+ydata <- ydata[, c("Experiment", "treatment", "Replicate", "block", "Row", "Column", "Variety_ID", "grain.yield", "type")]
+ydata$Man <- ifelse(ydata$treatment == "rainfed", "R", "W")
+ydata$Env <- substr(ydata$Experiment, 1, 5)
+ydata$Gen <- ydata$Variety_ID
+ydata <- droplevels(na.omit(ydata))
+ydata <- droplevels(ydata[ydata$type == "CrossValidation",])
+# Discard Deb13 because it only has the R management:
+ydata <- droplevels(ydata[ydata$Env != "Deb13",])
+ydata <- ydata[, c("Man", "Env", "Gen", "Replicate", "block", "Row", "Column", "grain.yield")]
+colnames(ydata) <- c("Man", "Env", "Gen", "Rep", "Block", "Row", "Col", "GY")
+ydata$ManEnv <- paste(ydata$Man, ydata$Env, sep = ":")
+
+# Fitting single-trial models:
+e <- unique(ydata$ManEnv)[1]
+i <- 1
+# ggplot(droplevels(ydata[ydata$ManEnv == e & ydata$Block %in% 1:8,]), aes(x = Col, y = Row, color = as.factor(Block), shape = as.factor(Rep))) +
+#   geom_point(size = 3) + theme_classic()
+if (!(all(c("d.corr.SE.rds", "K.corr.SE.rds") %in% list.files("DROPS/data")))) {
+  for (e in unique(ydata$ManEnv)) {
+    ydata.ss <- droplevels(ydata[ydata$ManEnv == e,])
+    ydata.ss$R <- as.factor(ydata.ss$Row)
+    ydata.ss$C <- as.factor(ydata.ss$Col)
+    ydata.ss$Gen <- as.factor(ydata.ss$Gen)
+    ydata.ss$Rep <- as.factor(ydata.ss$Rep)
+    fit <- LMMsolve(fixed = GY ~ -1 + Gen,
+                    random = ~ Rep + R + C,
+                    spline = ~ spl2D(Row, Col, nseg = c(25, 70)),
+                    data = ydata.ss, maxit = 250, trace = TRUE, tolerance = 1e-6)
+    
+    # Getting standard errors
+    C <- as.matrix(fit$C) # Coefficient matrix
+    X <- as.matrix(fit$X) # Fixed effects design matrix
+    Z <- as.matrix(fit$Z) # Random effects design matrix
+    nX <- ncol(as.matrix(fit$X)) # Number of fixed effects (BLUEs for management-genotype combinations)
+    Czz <- C[(nX + 1):nrow(C), (nX + 1):ncol(C)] # Block of C corresponding to the random effects (Zt %*% Ri %*% Z + Gi)
+    Ri <- as.matrix(fit$lRinv$residual) * (1 / fit$VarDf$Variance[fit$VarDf$VarComp == "residual"]) # Inverse residual covariance matrix
+    Gi <- Czz - t(Z) %*% Ri %*% Z # Inverse random effects covariance matrix, see comment on Czz line
+    V <- Z %*% solve(Gi) %*% t(Z) + solve(Ri) # Total covariance matrix
+    Vi <- solve(V)
+    omega <- solve(t(X) %*% Vi %*% X)
+    omegai <- solve(omega)
+    weights <- diag(omegai)[1:(nrow(omegai) - 3)]
+    
+    estimates <- coef(fit)
+    BLUEs <- data.frame(Gen = gsub("Gen_(.*)", "\\1", names(estimates$Gen)),
+                        GY = as.numeric(estimates$Gen))
+    BLUEs$ManEnv <- e
+    BLUEs$Man <- gsub("(.):.*", "\\1", e)
+    BLUEs$Env <- gsub(".:(.*)", "\\1", e)
+    BLUEs <- BLUEs[-1, ] # Discarding the first row because we have no intercept.
+    if (length(weights) != nrow(BLUEs)) {
+      stop("Something went wrong!")
+    }
+    BLUEs$weight <- weights
+    reps <- as.data.frame(table(ydata.ss$Gen))
+    BLUEs$reps <- reps[match(BLUEs$Gen, as.character(reps$Var1)), "Freq"]
+    if (i == 1) {
+      d.corr <- BLUEs[, c("Man", "Env", "Gen", "GY", "weight", "reps")]
+    } else {
+      d.corr <- rbind(d.corr, BLUEs[, c("Man", "Env", "Gen", "GY", "weight", "reps")])
+    }
+    i <- i + 1
+  }
+  d.corr <- d.corr[which(d.corr$Gen %in% rownames(K)),]
+  d.corr$Man <- as.factor(d.corr$Man)
+  d.corr$Env <- as.factor(d.corr$Env)
+  d.corr$Gen <- as.factor(d.corr$Gen)
+  d.corr$ManEnv <- as.factor(paste(as.character(d.corr$Man), as.character(d.corr$Env), sep = ":"))
+  saveRDS(d.corr, "DROPS/data/d.corr.SE.rds")
+  saveRDS(K, "DROPS/data/K.corr.SE.rds")
+} else {
+  d.corr <- readRDS("DROPS/data/d.corr.SE.rds")
+  K <- readRDS("DROPS/data/K.corr.SE.rds")
+}
+
+# Now use d.corr instead of loading in the published BLUEs and continue as before:
+ydata <- d.corr
+
+# Loading and subsetting yield data:
+# ydata <- read.csv("DROPS/raw_data/2b-GrainYield_components_BLUEs_level-1.csv")
+# ydata <- ydata[which(ydata$Variety_ID %in% rownames(K)),]
+
+# There is one trial that only has 238 genotypes (W:Kar13):
+# aggregate(ydata, GY ~ ManEnv, FUN = length)
+
+# We need to figure out which genotypes are present in all 28 trials:
+present <- vector("list", length(levels(ydata$ManEnv)))
+for (i in 1:length(present)) {
+  names(present)[i] <- levels(ydata$ManEnv)[i]
+  present[[i]] <- levels(droplevels(ydata[ydata$ManEnv == names(present)[i],])$Gen)
+}
+keep <- Reduce(intersect, present) # 234 genotypes that are present everywhere, let's just discard the 12 other genotypes.
+ydata <- droplevels(ydata[ydata$Gen %in% keep,])
 
 # Loading environmental data:
 edata <- read.csv("DROPS/raw_data/1-Env_variables_daily.csv")
 
 # Which loc-years do we have in ydata (14 loc-years)?
-y.locyears <- unique(gsub("(.*)[RW]", "\\1", unique(ydata$Experiment)))
+y.locyears <- unique(as.character(ydata$Env))
 
 # We have edata for all 14 loc-years in ydata!
 length(y.locyears[which(y.locyears %in% unique(edata$Env))])
@@ -140,57 +229,49 @@ rownames(edata.fit.wide) <- edata.fit.wide$env
 # Making and saving environmental correlation matrix:
 X <- scale(t(as.matrix(edata.fit.wide[, -1])))
 C <- (t(X) %*% X) / (ncol(edata.fit.wide[, -1]) - 1)
-saveRDS(C, "DROPS/data/EC.rds")
+saveRDS(C, "DROPS/data/EC.SE.rds")
 
 # Distance matrix:
 X <- scale(as.matrix(edata.fit.wide[, -1]))
 ED <- (as.matrix(dist(X, method = "euclidian"))^2) / ncol(X)
-saveRDS(ED, "DROPS/data/ED.rds")
-
-# Subsetting data to rainfed trials:
-keep <- c(paste0(y.locyears, "R"), paste0(y.locyears, "W"))
-ydata.ss <- droplevels(ydata[which(ydata$Experiment %in% keep),])
-ydata.ss$Env <- substr(ydata.ss$Experiment, 1, 5)
-ydata.ss$Man <- substr(ydata.ss$Experiment, 6, 6)
-ydata.ss <- ydata.ss[, c("Env", "Man", "Variety_ID", "grain.yield", "grain.number",
-                         "seed.size", "plant.height", "tassel.height", "ear.height",
-                         "anthesis", "silking")]
-names(ydata.ss) <- c("Env", "Man", "Gen", "GY", "GN", "SS", "PH", "TH", "EH", "A", "S")
+saveRDS(ED, "DROPS/data/ED.SE.rds")
 
 # Making 100% sure the ordering is right:
+K <- K[levels(ydata$Gen), levels(ydata$Gen)]
 M <- matrix(0, 2, 2)
 rownames(M) <- colnames(M) <- c("R", "W")
 order <- rownames(kronecker(kronecker(M, ED, make.dimnames = TRUE), K, make.dimnames = TRUE))
-ydata.ss$ManEnvGen <- paste(ydata.ss$Man, ydata.ss$Env, ydata.ss$Gen, sep = ":")
-ydata.ss$ManEnv <- paste(ydata.ss$Man, ydata.ss$Env, sep = ":")
-ydata.ss$ManGen <- paste(ydata.ss$Man, ydata.ss$Gen, sep = ":")
-ydata.ss$EnvGen <- paste(ydata.ss$Env, ydata.ss$Gen, sep = ":")
-ydata.ss <- ydata.ss[match(order, ydata.ss$ManEnvGen),]
+ydata$ManEnvGen <- paste(ydata$Man, ydata$Env, ydata$Gen, sep = ":")
+ydata$ManEnv <- paste(ydata$Man, ydata$Env, sep = ":")
+ydata$ManGen <- paste(ydata$Man, ydata$Gen, sep = ":")
+ydata$EnvGen <- paste(ydata$Env, ydata$Gen, sep = ":")
+ydata <- ydata[match(order, ydata$ManEnvGen),]
 
-ydata.ss$Env <- factor(ydata.ss$Env, levels = ydata.ss$Env, labels = ydata.ss$Env)
-ydata.ss$Man <- factor(ydata.ss$Man, levels = ydata.ss$Man, labels = ydata.ss$Man)
-ydata.ss$Gen <- factor(ydata.ss$Gen, levels = ydata.ss$Gen, labels = ydata.ss$Gen)
-ydata.ss$ManEnvGen <- factor(ydata.ss$ManEnvGen, levels = ydata.ss$ManEnvGen, labels = ydata.ss$ManEnvGen)
-ydata.ss$ManEnv <- factor(ydata.ss$ManEnv, levels = ydata.ss$ManEnv, labels = ydata.ss$ManEnv)
-ydata.ss$ManGen <- factor(ydata.ss$ManGen, levels = ydata.ss$ManGen, labels = ydata.ss$ManGen)
-ydata.ss$EnvGen <- factor(ydata.ss$EnvGen, levels = ydata.ss$EnvGen, labels = ydata.ss$EnvGen)
+ydata$Env <- factor(ydata$Env, levels = ydata$Env, labels = ydata$Env)
+ydata$Man <- factor(ydata$Man, levels = ydata$Man, labels = ydata$Man)
+ydata$Gen <- factor(ydata$Gen, levels = ydata$Gen, labels = ydata$Gen)
+ydata$ManEnvGen <- factor(ydata$ManEnvGen, levels = ydata$ManEnvGen, labels = ydata$ManEnvGen)
+ydata$ManEnv <- factor(ydata$ManEnv, levels = ydata$ManEnv, labels = ydata$ManEnv)
+ydata$ManGen <- factor(ydata$ManGen, levels = ydata$ManGen, labels = ydata$ManGen)
+ydata$EnvGen <- factor(ydata$EnvGen, levels = ydata$EnvGen, labels = ydata$EnvGen)
 
-all(levels(ydata.ss$Env) == rownames(ED))
-all(levels(ydata.ss$Gen) == rownames(K))
-all(levels(ydata.ss$ManEnv) == rownames(kronecker(M, ED, make.dimnames = TRUE)))
-all(levels(ydata.ss$ManEnvGen) == rownames(kronecker(kronecker(M, ED, make.dimnames = TRUE), K, make.dimnames = TRUE)))
+all(levels(ydata$Env) == rownames(ED))
+all(levels(ydata$Gen) == rownames(K))
+all(levels(ydata$ManEnv) == rownames(kronecker(M, ED, make.dimnames = TRUE)))
+all(levels(ydata$ManEnvGen) == rownames(kronecker(kronecker(M, ED, make.dimnames = TRUE), K, make.dimnames = TRUE)))
 
-all(levels(ydata.ss$Man) == unique(as.character(ydata.ss$Man)))
-all(levels(ydata.ss$Env) == unique(as.character(ydata.ss$Env)))
-all(levels(ydata.ss$Gen) == unique(as.character(ydata.ss$Gen)))
+all(levels(ydata$Man) == unique(as.character(ydata$Man)))
+all(levels(ydata$Env) == unique(as.character(ydata$Env)))
+all(levels(ydata$Gen) == unique(as.character(ydata$Gen)))
 
-all(levels(ydata.ss$ManEnvGen) == unique(as.character(ydata.ss$ManEnvGen)))
+all(levels(ydata$ManEnvGen) == unique(as.character(ydata$ManEnvGen)))
 
-all(levels(ydata.ss$ManEnv) == unique(as.character(ydata.ss$ManEnv)))
-all(levels(ydata.ss$ManGen) == unique(as.character(ydata.ss$ManGen)))
-all(levels(ydata.ss$EnvGen) == unique(as.character(ydata.ss$EnvGen)))
+all(levels(ydata$ManEnv) == unique(as.character(ydata$ManEnv)))
+all(levels(ydata$ManGen) == unique(as.character(ydata$ManGen)))
+all(levels(ydata$EnvGen) == unique(as.character(ydata$EnvGen)))
 
 # Saving:
-saveRDS(ydata.ss, "DROPS/data/ydata.rds")
+saveRDS(ydata, "DROPS/data/ydata.SE.rds")
+saveRDS(K, "DROPS/data/K.SE.rds")
 
 

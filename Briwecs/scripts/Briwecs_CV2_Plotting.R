@@ -22,19 +22,15 @@ plotdata.long$Model <- factor(plotdata.long$Model,
                               labels = c("ADD", "FA-1", "FA-2", "FA-3",
                                          "SV-LK", "SV-GK", "MV-LK", "MV-GK", "MB-SV-GK", "MB-MV-GK"))
 plotdata.long$Man <- factor(plotdata.long$Man, levels = levels(plotdata.long$Man), labels = c("High Nitrogen", "Low Nitrogen"))
-# ggplot(plotdata.long, aes(x = Checks, y = Value, color = Model)) +
-#   facet_wrap(vars(Measure, Man), ncol = 2, scales = "free") +
-#   geom_ribbon(aes(y = Value, ymin = Value - SE, ymax = Value + SE, fill = Model), alpha = 0.2, color = NA) +
-#   geom_line(linewidth = 1.5) +
-#   geom_point(size = 2) +
-#   theme_classic(base_size = 18) +
-#   ylab(NULL) +
-#   xlab("Number of checks") +
-#   scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B")) +
-#   scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B")) +
-#   theme(legend.position = "bottom")
-# 
-# ggsave(filename = "plots/Briwecs_CV2.png", dpi = 300, width = 32, height = 32, units = "cm")
+
+# Text of section 3.1 ====
+# Improvement over the ADD model at the least sparse end:
+tmp <- droplevels(plotdata.long[plotdata.long$Checks == max(plotdata.long$Checks) & plotdata.long$Measure == "Pearson Correlation",])
+tmp <- aggregate(tmp, Value ~ Model, FUN = mean)
+mean((tmp[2:10, 2] - tmp[1, 2]) / tmp[1, 2]) # 8% on average
+tmp <- droplevels(plotdata.long[plotdata.long$Checks == max(plotdata.long$Checks) & plotdata.long$Measure == "RMSE",])
+tmp <- aggregate(tmp, Value ~ Model, FUN = mean)
+mean((tmp[2:10, 2] - tmp[1, 2]) / tmp[1, 2]) # 18% on average
 
 p1 <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correlation",]), aes(x = Checks, y = Value, color = Model)) +
   facet_wrap(vars(Measure, Man), ncol = 2) +
