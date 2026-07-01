@@ -774,6 +774,7 @@ tmp$PercCov <- round(tmp$`(Latent) Covariables` / (tmp$`(Latent) Covariables` + 
 tmp[, c("Model", "PercCov")]
 
 # Percentages of genetic variance explained by the environmental covariables per management:
+# Outliers for R, big difference between mean and median for kernels-R:
 # results4$type <- as.factor(ifelse(results4$Model %in% paste0("FA-", 1:3), "FA", ifelse(results4$Model %in% c("FVP", "ADD"), ifelse(results4$Model == "ADD", "ADD", "FVP"), "Kernel")))
 # tmp <- aggregate(results4, cbind(`(Latent) Covariables`, LOF, Residual, Total) ~ type + Management, FUN = mean)
 # tmp$PercCov <- round(tmp$`(Latent) Covariables` / (tmp$`(Latent) Covariables` + tmp$LOF), 2)

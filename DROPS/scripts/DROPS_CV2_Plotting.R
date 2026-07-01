@@ -22,53 +22,109 @@ plotdata.long$Model <- factor(plotdata.long$Model,
                               labels = c("ADD", "FA-1", "FA-2", "FA-3",
                                          "SV-LK", "SV-GK", "MV-LK", "MV-GK", "MB-SV-GK", "MB-MV-GK"))
 plotdata.long$Man <- factor(plotdata.long$Man, levels = levels(plotdata.long$Man), labels = c("Rain-fed", "Irrigated"))
-# ggplot(plotdata.long, aes(x = Checks, y = Value, color = Model)) +
-#   facet_wrap(vars(Measure, Man), ncol = 2, scales = "free") +
-#   geom_ribbon(aes(y = Value, ymin = Value - SE, ymax = Value + SE, fill = Model), alpha = 0.2, color = NA) +
-#   geom_line(linewidth = 1.5) +
-#   geom_point(size = 2) +
-#   theme_classic(base_size = 18) +
-#   ylab(NULL) +
-#   xlab("Number of checks") +
-#   scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B")) +
-#   scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B")) +
-#   theme(legend.position = "bottom")
-# 
-# ggsave(filename = "plots/DROPS_CV2.png", dpi = 300, width = 32, height = 32, units = "cm")
+
+# Text of section 3.1 ====
+bw <- readRDS("DROPS/results/CV2/bandwidths.MB.CV2.SE.1-150.rds")
+aggregate(bw, cbind(R, W, R_W) ~ Model, FUN = function(x) round(mean(x), 2))
 
 p1 <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correlation",]), aes(x = Checks, y = Value, color = Model)) +
-  facet_wrap(vars(Measure, Man), ncol = 2) +
+  facet_wrap(vars(Man), ncol = 2) +
   geom_ribbon(aes(y = Value, ymin = Value - SE, ymax = Value + SE, fill = Model), alpha = 0.2, color = NA) +
   geom_line(linewidth = 1.5) +
   geom_point(size = 2) +
   theme_classic(base_size = 18) +
-  ylab(NULL) + #ylim(c(0.545, 0.70)) +
+  ylab("Pearson Correlation") + #ylim(c(0.545, 0.70)) +
   xlab(NULL) +
-  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink", "purple")) +
-  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink", "purple")) +
+  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
   theme(legend.position = "none",
         strip.background = element_blank(),
         strip.text = element_text(size = 20),
         axis.title.y = element_text(size = 20))
 
 p2 <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE",]), aes(x = Checks, y = Value, color = Model)) +
-  facet_wrap(vars(Measure, Man), ncol = 2, scales = "free") +
+  facet_wrap(vars(Man), ncol = 2, scales = "free") +
   geom_ribbon(aes(y = Value, ymin = Value - SE, ymax = Value + SE, fill = Model), alpha = 0.2, color = NA) +
   geom_line(linewidth = 1.5) +
   geom_point(size = 2) +
   theme_classic(base_size = 18) +
-  ylab(NULL) +
+  ylab("RMSE") +
   xlab("Number of checks") +
-  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink", "purple")) +
-  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink", "purple")) +
+  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
   theme(legend.position = "bottom",
         strip.background = element_blank(),
-        strip.text = element_text(size = 20),
+        strip.text = element_blank(),
         axis.title.y = element_text(size = 20))
 
 p1 / p2
 ggsave(filename = "plots/DROPS_CV2.png", dpi = 300, width = 32, height = 32, units = "cm")
 # rm(list = ls())
+
+# Enlarged versions:
+PCR <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correlation" & plotdata.long$Man == "Rain-fed",]), aes(x = Checks, y = Value, color = Model)) +
+  facet_wrap(vars(Man), ncol = 2) +
+  geom_ribbon(aes(y = Value, ymin = Value - SE, ymax = Value + SE, fill = Model), alpha = 0.2, color = NA) +
+  geom_line(linewidth = 2.5) +
+  geom_point(size = 3) +
+  theme_classic(base_size = 18) +
+  ylab("Pearson Correlation") + #ylim(c(0.545, 0.70)) +
+  xlab("Number of checks") +
+  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  theme(legend.position = "right",
+        strip.background = element_blank(),
+        strip.text = element_text(size = 20),
+        axis.title.y = element_text(size = 20))
+ggsave(plot = PCR, filename = "plots/DROPS_CV2_PCR.png", dpi = 300, width = 32, height = 48, units = "cm")
+
+PCW <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correlation" & plotdata.long$Man == "Irrigated",]), aes(x = Checks, y = Value, color = Model)) +
+  facet_wrap(vars(Man), ncol = 2) +
+  geom_ribbon(aes(y = Value, ymin = Value - SE, ymax = Value + SE, fill = Model), alpha = 0.2, color = NA) +
+  geom_line(linewidth = 2.5) +
+  geom_point(size = 3) +
+  theme_classic(base_size = 18) +
+  ylab("Pearson Correlation") + #ylim(c(0.545, 0.70)) +
+  xlab("Number of checks") +
+  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  theme(legend.position = "right",
+        strip.background = element_blank(),
+        strip.text = element_text(size = 20),
+        axis.title.y = element_text(size = 20))
+ggsave(plot = PCW, filename = "plots/DROPS_CV2_PCW.png", dpi = 300, width = 32, height = 48, units = "cm")
+
+RMSER <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE" & plotdata.long$Man == "Rain-fed",]), aes(x = Checks, y = Value, color = Model)) +
+  facet_wrap(vars(Man), ncol = 2) +
+  geom_ribbon(aes(y = Value, ymin = Value - SE, ymax = Value + SE, fill = Model), alpha = 0.2, color = NA) +
+  geom_line(linewidth = 2.5) +
+  geom_point(size = 3) +
+  theme_classic(base_size = 18) +
+  ylab("RMSE") + #ylim(c(0.545, 0.70)) +
+  xlab("Number of checks") +
+  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  theme(legend.position = "right",
+        strip.background = element_blank(),
+        strip.text = element_text(size = 20),
+        axis.title.y = element_text(size = 20))
+ggsave(plot = RMSER, filename = "plots/DROPS_CV2_RMSER.png", dpi = 300, width = 32, height = 48, units = "cm")
+
+RMSEW <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE" & plotdata.long$Man == "Irrigated",]), aes(x = Checks, y = Value, color = Model)) +
+  facet_wrap(vars(Man), ncol = 2) +
+  geom_ribbon(aes(y = Value, ymin = Value - SE, ymax = Value + SE, fill = Model), alpha = 0.2, color = NA) +
+  geom_line(linewidth = 2.5) +
+  geom_point(size = 3) +
+  theme_classic(base_size = 18) +
+  ylab("RMSE") + #ylim(c(0.545, 0.70)) +
+  xlab("Number of checks") +
+  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  theme(legend.position = "right",
+        strip.background = element_blank(),
+        strip.text = element_text(size = 20),
+        axis.title.y = element_text(size = 20))
+ggsave(plot = RMSEW, filename = "plots/DROPS_CV2_RMSEW.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 
 # Plotting per environment:
@@ -113,8 +169,8 @@ for (i in 1:4) {
     theme_classic(base_size = 20) +
     ylab(metr) +
     xlab("Number of checks") +
-    scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink", "purple")) +
-    scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink", "purple")) +
+    scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+    scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
     theme(legend.position = "bottom",
           strip.background = element_blank(),
           strip.text = element_text(size = 20),
@@ -124,4 +180,5 @@ for (i in 1:4) {
   label2 <- ifelse(i %in% c(1, 3), "A", "B")
   ggsave(filename = sprintf("plots/accuracies_per_env/DROPS_%s_%s.png", label1, label2), dpi = 300, width = 32, height = 48, units = "cm")
 }
+
 

@@ -32,41 +32,107 @@ tmp <- droplevels(plotdata.long[plotdata.long$Checks == max(plotdata.long$Checks
 tmp <- aggregate(tmp, Value ~ Model, FUN = mean)
 mean((tmp[2:10, 2] - tmp[1, 2]) / tmp[1, 2]) # 18% on average
 
+bw <- readRDS("Briwecs/results/CV2/bandwidths.MB.CV2.SE.1-250.rds")
+aggregate(bw, cbind(HN, LN, HN_LN) ~ Model, FUN = function(x) round(mean(x), 2))
+
 p1 <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correlation",]), aes(x = Checks, y = Value, color = Model)) +
-  facet_wrap(vars(Measure, Man), ncol = 2) +
+  facet_wrap(vars(Man), ncol = 2) +
   geom_ribbon(aes(y = Value, ymin = Value - SE, ymax = Value + SE, fill = Model), alpha = 0.2, color = NA) +
   geom_line(linewidth = 1.5) +
   geom_point(size = 2) +
   theme_classic(base_size = 18) +
-  ylab(NULL) + 
+  ylab("Pearson Correlation") + 
   xlab(NULL) +
-  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink", "purple")) +
-  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink", "purple")) +
+  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
   theme(legend.position = "none",
         strip.background = element_blank(),
         strip.text = element_text(size = 20),
         axis.title.y = element_text(size = 20))
 
 p2 <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE",]), aes(x = Checks, y = Value, color = Model)) +
-  facet_wrap(vars(Measure, Man), ncol = 2, scales = "free") +
+  facet_wrap(vars(Man), ncol = 2, scales = "free") +
   geom_ribbon(aes(y = Value, ymin = Value - SE, ymax = Value + SE, fill = Model), alpha = 0.2, color = NA) +
   geom_line(linewidth = 1.5) +
   geom_point(size = 2) +
   theme_classic(base_size = 18) +
-  ylab(NULL) +
+  ylab("RMSE") +
   xlab("Number of checks") +
-  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink", "purple")) +
-  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink", "purple")) +
+  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
   theme(legend.position = "bottom",
         strip.background = element_blank(),
-        strip.text = element_text(size = 20),
+        strip.text = element_blank(),
         axis.title.y = element_text(size = 20))
 
 p1 / p2
 ggsave(filename = "plots/Briwecs_CV2.png", dpi = 300, width = 32, height = 32, units = "cm")
-
 # rm(list = ls())
 
+# Enlarged versions:
+PCHN <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correlation" & plotdata.long$Man == "High Nitrogen",]), aes(x = Checks, y = Value, color = Model)) +
+  facet_wrap(vars(Man), ncol = 2) +
+  geom_ribbon(aes(y = Value, ymin = Value - SE, ymax = Value + SE, fill = Model), alpha = 0.2, color = NA) +
+  geom_line(linewidth = 2.5) +
+  geom_point(size = 3) +
+  theme_classic(base_size = 18) +
+  ylab("Pearson Correlation") + #ylim(c(0.545, 0.70)) +
+  xlab("Number of checks") +
+  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  theme(legend.position = "right",
+        strip.background = element_blank(),
+        strip.text = element_text(size = 20),
+        axis.title.y = element_text(size = 20))
+ggsave(plot = PCHN, filename = "plots/BRIWECS_CV2_PCHN.png", dpi = 300, width = 32, height = 48, units = "cm")
+
+PCLN <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correlation" & plotdata.long$Man == "Low Nitrogen",]), aes(x = Checks, y = Value, color = Model)) +
+  facet_wrap(vars(Man), ncol = 2) +
+  geom_ribbon(aes(y = Value, ymin = Value - SE, ymax = Value + SE, fill = Model), alpha = 0.2, color = NA) +
+  geom_line(linewidth = 2.5) +
+  geom_point(size = 3) +
+  theme_classic(base_size = 18) +
+  ylab("Pearson Correlation") + #ylim(c(0.545, 0.70)) +
+  xlab("Number of checks") +
+  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  theme(legend.position = "right",
+        strip.background = element_blank(),
+        strip.text = element_text(size = 20),
+        axis.title.y = element_text(size = 20))
+ggsave(plot = PCLN, filename = "plots/BRIWECS_CV2_PCLN.png", dpi = 300, width = 32, height = 48, units = "cm")
+
+RMSEHN <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE" & plotdata.long$Man == "High Nitrogen",]), aes(x = Checks, y = Value, color = Model)) +
+  facet_wrap(vars(Man), ncol = 2) +
+  geom_ribbon(aes(y = Value, ymin = Value - SE, ymax = Value + SE, fill = Model), alpha = 0.2, color = NA) +
+  geom_line(linewidth = 2.5) +
+  geom_point(size = 3) +
+  theme_classic(base_size = 18) +
+  ylab("RMSE") + #ylim(c(0.545, 0.70)) +
+  xlab("Number of checks") +
+  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  theme(legend.position = "right",
+        strip.background = element_blank(),
+        strip.text = element_text(size = 20),
+        axis.title.y = element_text(size = 20))
+ggsave(plot = RMSEHN, filename = "plots/BRIWECS_CV2_RMSEHN.png", dpi = 300, width = 32, height = 48, units = "cm")
+
+RMSELN <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE" & plotdata.long$Man == "Low Nitrogen",]), aes(x = Checks, y = Value, color = Model)) +
+  facet_wrap(vars(Man), ncol = 2) +
+  geom_ribbon(aes(y = Value, ymin = Value - SE, ymax = Value + SE, fill = Model), alpha = 0.2, color = NA) +
+  geom_line(linewidth = 2.5) +
+  geom_point(size = 3) +
+  theme_classic(base_size = 18) +
+  ylab("RMSE") + #ylim(c(0.545, 0.70)) +
+  xlab("Number of checks") +
+  scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+  theme(legend.position = "right",
+        strip.background = element_blank(),
+        strip.text = element_text(size = 20),
+        axis.title.y = element_text(size = 20))
+ggsave(plot = RMSELN, filename = "plots/BRIWECS_CV2_RMSELN.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 # Plotting per environment:
 rm(list = ls())
@@ -110,8 +176,8 @@ for (i in 1:4) {
     theme_classic(base_size = 20) +
     ylab(metr) +
     xlab("Number of checks") +
-    scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink", "purple")) +
-    scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink", "purple")) +
+    scale_color_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
+    scale_fill_manual(values = c("black", "#0C62AF", "#4499F5", "#8FCAFD", "#FD8700", "#D8511D", "#758717", "#42673B", "pink1", "purple")) +
     theme(legend.position = "bottom",
           strip.background = element_blank(),
           strip.text = element_text(size = 20),
