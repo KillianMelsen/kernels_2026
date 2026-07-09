@@ -40,7 +40,8 @@ p1 <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correlat
   theme(legend.position = "none",
         strip.background = element_blank(),
         strip.text = element_text(size = 20),
-        axis.title.y = element_text(size = 20))
+        axis.title.y = element_text(size = 20)) +
+  scale_x_continuous(breaks = unique(plotdata.long$Checks))
 
 p2 <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE",]), aes(x = Checks, y = Value, color = Model)) +
   facet_wrap(vars(Man), ncol = 2, scales = "free") +
@@ -55,7 +56,8 @@ p2 <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE",]), aes(x 
   theme(legend.position = "bottom",
         strip.background = element_blank(),
         strip.text = element_blank(),
-        axis.title.y = element_text(size = 20))
+        axis.title.y = element_text(size = 20)) +
+  scale_x_continuous(breaks = unique(plotdata.long$Checks))
 
 p1 / p2
 ggsave(filename = "plots/DROPS_CV2.png", dpi = 300, width = 32, height = 32, units = "cm")
@@ -75,7 +77,8 @@ PCR <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correla
   theme(legend.position = "right",
         strip.background = element_blank(),
         strip.text = element_text(size = 20),
-        axis.title.y = element_text(size = 20))
+        axis.title.y = element_text(size = 20)) +
+  scale_x_continuous(breaks = unique(plotdata.long$Checks))
 ggsave(plot = PCR, filename = "plots/DROPS_CV2_PCR.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 PCW <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correlation" & plotdata.long$Man == "Irrigated",]), aes(x = Checks, y = Value, color = Model)) +
@@ -91,7 +94,8 @@ PCW <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correla
   theme(legend.position = "right",
         strip.background = element_blank(),
         strip.text = element_text(size = 20),
-        axis.title.y = element_text(size = 20))
+        axis.title.y = element_text(size = 20)) +
+  scale_x_continuous(breaks = unique(plotdata.long$Checks))
 ggsave(plot = PCW, filename = "plots/DROPS_CV2_PCW.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 RMSER <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE" & plotdata.long$Man == "Rain-fed",]), aes(x = Checks, y = Value, color = Model)) +
@@ -107,7 +111,8 @@ RMSER <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE" & plotd
   theme(legend.position = "right",
         strip.background = element_blank(),
         strip.text = element_text(size = 20),
-        axis.title.y = element_text(size = 20))
+        axis.title.y = element_text(size = 20)) +
+  scale_x_continuous(breaks = unique(plotdata.long$Checks))
 ggsave(plot = RMSER, filename = "plots/DROPS_CV2_RMSER.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 RMSEW <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE" & plotdata.long$Man == "Irrigated",]), aes(x = Checks, y = Value, color = Model)) +
@@ -123,7 +128,8 @@ RMSEW <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE" & plotd
   theme(legend.position = "right",
         strip.background = element_blank(),
         strip.text = element_text(size = 20),
-        axis.title.y = element_text(size = 20))
+        axis.title.y = element_text(size = 20)) +
+  scale_x_continuous(breaks = unique(plotdata.long$Checks))
 ggsave(plot = RMSEW, filename = "plots/DROPS_CV2_RMSEW.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 
@@ -174,7 +180,8 @@ for (i in 1:4) {
     theme(legend.position = "bottom",
           strip.background = element_blank(),
           strip.text = element_text(size = 20),
-          axis.title.y = element_text(size = 20))
+          axis.title.y = element_text(size = 20)) +
+    scale_x_continuous(breaks = unique(plotdata.long$Checks))
   
   label1 <- ifelse(i %in% c(1, 2), "CORR", "RMSE")
   label2 <- ifelse(i %in% c(1, 3), "A", "B")

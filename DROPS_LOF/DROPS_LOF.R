@@ -588,14 +588,24 @@ if (!("results_DROPS_LOF_SE.rds" %in% list.files("DROPS_LOF"))) {
   saveRDS(results, "DROPS_LOF/results_DROPS_LOF_SE.rds")
 }
 results <- readRDS("DROPS_LOF/results_DROPS_LOF_SE.rds")
-results.total <- cbind(results[, c("Model", "Management", "Environment")],
+results.ADD <- droplevels(results[results$Model == "ADD",])
+colnames(results.ADD)[4] <- "Vg"
+results <- droplevels(results[results$Model != "ADD",])
+results.total <- cbind(results[, c("Model", "Management", "Environment")], # Common columns
                        data.frame(Vg = NA,
                                   Vmg = NA,
                                   Veg = NA,
                                   Vmeg = NA),
-                       results[, c("Vge", "Vlof", "Ve")])
-results.total <- rbind(results.total, results.FVP)
+                       results[, c("Vge", "Vlof", "Ve")]) # Variance components from kernel/FA models
+results.ADD <- cbind(results.ADD[, c("Model", "Management", "Environment", "Vg")],
+                     data.frame(Vmg = NA,
+                                Veg = NA,
+                                Vmeg = NA,
+                                Vge = NA),
+                     results.ADD[, c("Vlof", "Ve")])
+results.total <- rbind(results.total, results.FVP, results.ADD)
 results.FVP <- results.FVP[, c(1:7, 10)]
+results.ADD <- results.ADD[, c(1:4, 9:10)]
 library(ggplot2)
 library(patchwork)
 
@@ -603,10 +613,12 @@ library(patchwork)
 colnames(results.total) <- c("Model", "Management", "Environment", "G", "G x M", "G x E", "G x E x M", "(Latent) Covariables", "LOF", "Residual")
 colnames(results) <- c("Model", "Management", "Environment", "(Latent) Covariables", "LOF", "Residual")
 colnames(results.FVP) <- c("Model", "Management", "Environment", "G", "G x M", "G x E", "G x E x M", "Residual")
+colnames(results.ADD) <- c("Model", "Management", "Environment", "G", "LOF", "Residual")
 results2 <- as.data.frame(tidyr::pivot_longer(results.total, 4:10, names_to = "Component", values_to = "Variance"))
 results3.1 <- as.data.frame(tidyr::pivot_longer(aggregate(results, cbind(`(Latent) Covariables`, LOF, Residual) ~ Model + Management, FUN = mean), 3:5, names_to = "Component", values_to = "Variance"))
 results3.2 <- as.data.frame(tidyr::pivot_longer(aggregate(results.FVP, cbind(G, `G x M`, `G x E`, `G x E x M`, Residual) ~ Model + Management, FUN = mean), 3:7, names_to = "Component", values_to = "Variance"))
-results3 <- rbind(results3.1, results3.2)
+results3.3 <- as.data.frame(tidyr::pivot_longer(aggregate(results.ADD, cbind(G, LOF, Residual) ~ Model + Management, FUN = mean), 3:5, names_to = "Component", values_to = "Variance"))
+results3 <- rbind(results3.1, results3.2, results3.3)
 results2$Component <- factor(results2$Component, levels = c("G", "G x M", "G x E", "G x E x M", "(Latent) Covariables", "LOF", "Residual"), labels = c("G", "G x M", "G x E", "G x E x M", "Structured effect", "Lack of fit effect", "Residual effect"))
 results3$Component <- factor(results3$Component, levels = c("G", "G x M", "G x E", "G x E x M", "(Latent) Covariables", "LOF", "Residual"), labels = c("G", "G x M", "G x E", "G x E x M", "Structured effect", "Lack of fit effect", "Residual effect"))
 results2 <- droplevels(results2[results2$Model %in% c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK", "MB-SV-GK", "MB-MV-GK", "FVP"),])

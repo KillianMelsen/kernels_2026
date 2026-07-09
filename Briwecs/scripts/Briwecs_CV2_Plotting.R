@@ -48,7 +48,8 @@ p1 <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correlat
   theme(legend.position = "none",
         strip.background = element_blank(),
         strip.text = element_text(size = 20),
-        axis.title.y = element_text(size = 20))
+        axis.title.y = element_text(size = 20)) +
+  scale_x_continuous(breaks = unique(plotdata.long$Checks))
 
 p2 <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE",]), aes(x = Checks, y = Value, color = Model)) +
   facet_wrap(vars(Man), ncol = 2, scales = "free") +
@@ -63,7 +64,8 @@ p2 <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE",]), aes(x 
   theme(legend.position = "bottom",
         strip.background = element_blank(),
         strip.text = element_blank(),
-        axis.title.y = element_text(size = 20))
+        axis.title.y = element_text(size = 20)) +
+  scale_x_continuous(breaks = unique(plotdata.long$Checks))
 
 p1 / p2
 ggsave(filename = "plots/Briwecs_CV2.png", dpi = 300, width = 32, height = 32, units = "cm")
@@ -83,7 +85,8 @@ PCHN <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correl
   theme(legend.position = "right",
         strip.background = element_blank(),
         strip.text = element_text(size = 20),
-        axis.title.y = element_text(size = 20))
+        axis.title.y = element_text(size = 20)) +
+  scale_x_continuous(breaks = unique(plotdata.long$Checks))
 ggsave(plot = PCHN, filename = "plots/BRIWECS_CV2_PCHN.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 PCLN <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correlation" & plotdata.long$Man == "Low Nitrogen",]), aes(x = Checks, y = Value, color = Model)) +
@@ -99,7 +102,8 @@ PCLN <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "Pearson Correl
   theme(legend.position = "right",
         strip.background = element_blank(),
         strip.text = element_text(size = 20),
-        axis.title.y = element_text(size = 20))
+        axis.title.y = element_text(size = 20)) +
+  scale_x_continuous(breaks = unique(plotdata.long$Checks))
 ggsave(plot = PCLN, filename = "plots/BRIWECS_CV2_PCLN.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 RMSEHN <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE" & plotdata.long$Man == "High Nitrogen",]), aes(x = Checks, y = Value, color = Model)) +
@@ -115,7 +119,8 @@ RMSEHN <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE" & plot
   theme(legend.position = "right",
         strip.background = element_blank(),
         strip.text = element_text(size = 20),
-        axis.title.y = element_text(size = 20))
+        axis.title.y = element_text(size = 20)) +
+  scale_x_continuous(breaks = unique(plotdata.long$Checks))
 ggsave(plot = RMSEHN, filename = "plots/BRIWECS_CV2_RMSEHN.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 RMSELN <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE" & plotdata.long$Man == "Low Nitrogen",]), aes(x = Checks, y = Value, color = Model)) +
@@ -131,7 +136,8 @@ RMSELN <- ggplot(droplevels(plotdata.long[plotdata.long$Measure == "RMSE" & plot
   theme(legend.position = "right",
         strip.background = element_blank(),
         strip.text = element_text(size = 20),
-        axis.title.y = element_text(size = 20))
+        axis.title.y = element_text(size = 20)) +
+  scale_x_continuous(breaks = unique(plotdata.long$Checks))
 ggsave(plot = RMSELN, filename = "plots/BRIWECS_CV2_RMSELN.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 # Plotting per environment:
@@ -181,7 +187,8 @@ for (i in 1:4) {
     theme(legend.position = "bottom",
           strip.background = element_blank(),
           strip.text = element_text(size = 20),
-          axis.title.y = element_text(size = 20))
+          axis.title.y = element_text(size = 20)) +
+    scale_x_continuous(breaks = unique(plotdata.long$Checks))
   
   label1 <- ifelse(i %in% c(1, 2), "CORR", "RMSE")
   label2 <- ifelse(i %in% c(1, 3), "A", "B")
