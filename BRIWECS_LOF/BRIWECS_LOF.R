@@ -588,14 +588,24 @@ if (!("results_BRIWECS_LOF_SE.rds" %in% list.files("BRIWECS_LOF"))) {
   saveRDS(results, "BRIWECS_LOF/results_BRIWECS_LOF_SE.rds")
 }
 results <- readRDS("BRIWECS_LOF/results_BRIWECS_LOF_SE.rds")
-results.total <- cbind(results[, c("Model", "Management", "Environment")],
+results.ADD <- droplevels(results[results$Model == "ADD",])
+colnames(results.ADD)[4] <- "Vg"
+results <- droplevels(results[results$Model != "ADD",])
+results.total <- cbind(results[, c("Model", "Management", "Environment")], # Common columns
                        data.frame(Vg = NA,
                                   Vmg = NA,
                                   Veg = NA,
                                   Vmeg = NA),
-                       results[, c("Vge", "Vlof", "Ve")])
-results.total <- rbind(results.total, results.FVP)
+                       results[, c("Vge", "Vlof", "Ve")]) # Variance components from kernel/FA models
+results.ADD <- cbind(results.ADD[, c("Model", "Management", "Environment", "Vg")],
+                     data.frame(Vmg = NA,
+                                Veg = NA,
+                                Vmeg = NA,
+                                Vge = NA),
+                     results.ADD[, c("Vlof", "Ve")])
+results.total <- rbind(results.total, results.FVP, results.ADD)
 results.FVP <- results.FVP[, c(1:7, 10)]
+results.ADD <- results.ADD[, c(1:4, 9:10)]
 library(ggplot2)
 library(patchwork)
 
@@ -603,12 +613,14 @@ library(patchwork)
 colnames(results.total) <- c("Model", "Management", "Environment", "G", "G x M", "G x E", "G x E x M", "(Latent) Covariables", "LOF", "Residual")
 colnames(results) <- c("Model", "Management", "Environment", "(Latent) Covariables", "LOF", "Residual")
 colnames(results.FVP) <- c("Model", "Management", "Environment", "G", "G x M", "G x E", "G x E x M", "Residual")
+colnames(results.ADD) <- c("Model", "Management", "Environment", "G", "LOF", "Residual")
 results2 <- as.data.frame(tidyr::pivot_longer(results.total, 4:10, names_to = "Component", values_to = "Variance"))
 results3.1 <- as.data.frame(tidyr::pivot_longer(aggregate(results, cbind(`(Latent) Covariables`, LOF, Residual) ~ Model + Management, FUN = mean), 3:5, names_to = "Component", values_to = "Variance"))
 results3.2 <- as.data.frame(tidyr::pivot_longer(aggregate(results.FVP, cbind(G, `G x M`, `G x E`, `G x E x M`, Residual) ~ Model + Management, FUN = mean), 3:7, names_to = "Component", values_to = "Variance"))
-results3 <- rbind(results3.1, results3.2)
-results2$Component <- factor(results2$Component, levels = c("G", "G x M", "G x E", "G x E x M", "(Latent) Covariables", "LOF", "Residual"), labels = c("G", "G x M", "G x E", "G x E x M", "Structured effect", "Lack of fit effect", "Residual effect"))
-results3$Component <- factor(results3$Component, levels = c("G", "G x M", "G x E", "G x E x M", "(Latent) Covariables", "LOF", "Residual"), labels = c("G", "G x M", "G x E", "G x E x M", "Structured effect", "Lack of fit effect", "Residual effect"))
+results3.3 <- as.data.frame(tidyr::pivot_longer(aggregate(results.ADD, cbind(G, LOF, Residual) ~ Model + Management, FUN = mean), 3:5, names_to = "Component", values_to = "Variance"))
+results3 <- rbind(results3.1, results3.2, results3.3)
+results2$Component <- factor(results2$Component, levels = c("G", "G x M", "G x E", "G x E x M", "(Latent) Covariables", "LOF", "Residual"), labels = c("G (main effect)", "G x M", "G x E", "G x E x M", "G x E x M - (latent) covariables", "G x E x M - lack of fit", "Residual"))
+results3$Component <- factor(results3$Component, levels = c("G", "G x M", "G x E", "G x E x M", "(Latent) Covariables", "LOF", "Residual"), labels = c("G (main effect)", "G x M", "G x E", "G x E x M", "G x E x M - (latent) covariables", "G x E x M - lack of fit", "Residual"))
 results2 <- droplevels(results2[results2$Model %in% c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK", "MB-SV-GK", "MB-MV-GK", "FVP"),])
 results3 <- droplevels(results3[results3$Model %in% c("ADD", "FA-1", "FA-2", "FA-3", "SV-LK", "SV-GK", "MV-LK", "MV-GK", "MB-SV-GK", "MB-MV-GK", "FVP"),])
 
@@ -651,14 +663,14 @@ perc <- ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
   facet_grid(cols = vars(Management)) +
   geom_bar(position = "fill", stat = "identity") +
   scale_fill_manual(#values = c("#fcdd06", "red1", "red3", "red4", "#fcdd06", "#db161f", "#0e44af"),
-    values = c("G" = "#fcdd06",
-               "Structured effect" = "#fcdd06",
-               "G x M" = "red1",
-               "Lack of fit effect" = "#db161f",
-               "G x E" = "red3",
-               "Residual effect" = "#0e44af",
-               "G x E x M" = "red4"),
-    breaks = c("Structured effect", "G x M", "Lack of fit effect", "G x E", "Residual effect", "G x E x M")) +
+    values = c("G (main effect)" = "orange2",
+               "G x E x M - (latent) covariables" = "#fcdd06",
+               "G x M" = "purple1",
+               "G x E x M - lack of fit" = "#db161f",
+               "G x E" = "purple3",
+               "Residual" = "#0e44af",
+               "G x E x M" = "purple4"),
+    breaks = c("G (main effect)", "G x E x M - (latent) covariables", "G x M", "G x E x M - lack of fit", "G x E", "Residual", "G x E x M")) +
   scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
   ylab("Percentage of\ntotal variance") +
   theme_classic(base_size = 18) +
@@ -669,26 +681,16 @@ perc <- ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
         axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1.1))
 perc
 
-# Output ====
-## Figure 4 ====
-# var <- ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
-#   facet_grid(cols = vars(Management)) +
-#   geom_bar(stat = "identity") +
-#   scale_fill_manual(values = c("#fcdd06", "#db161f", "#0e44af")) +
-#   # scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
-#   ylab("Variance") +
-#   theme_classic(base_size = 18) + theme(legend.position = "bottom",
-#                                         strip.background = element_blank(),
-#                                         strip.text = element_text(size = 20),
-#                                         axis.title.y = element_text(size = 20)) +
-#   ylim(c(0, 115))
-# var
-# ggsave(plot = var, filename = "plots/BRIWECS_LOF_Averaged_numeric.png", dpi = 300, width = 32, height = 15, units = "cm")
-
 var <- ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
   facet_grid(cols = vars(Management)) +
   geom_bar(stat = "identity") +
-  scale_fill_manual(values = c("#fcdd06", "red1", "red3", "red4", "#fcdd06", "#db161f", "#0e44af")) +
+  scale_fill_manual(values = c("G (main effect)" = "orange2",
+                               "G x E x M - (latent) covariables" = "#fcdd06",
+                               "G x M" = "purple1",
+                               "G x E x M - lack of fit" = "#db161f",
+                               "G x E" = "purple3",
+                               "Residual" = "#0e44af",
+                               "G x E x M" = "purple4")) +
   # scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
   ylab("Variance") + xlab(NULL) +
   theme_classic(base_size = 18) + theme(legend.position = "none") +
@@ -705,14 +707,14 @@ ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment
   facet_grid(cols = vars(Management), rows = vars(Environment), scales = "free_y") +
   geom_bar(stat = "identity") +
   scale_fill_manual(#values = c("#fcdd06", "red1", "red3", "red4", "#fcdd06", "#db161f", "#0e44af"),
-    values = c("G" = "#fcdd06",
-               "Structured effect" = "#fcdd06",
-               "G x M" = "red1",
-               "Lack of fit effect" = "#db161f",
-               "G x E" = "red3",
-               "Residual effect" = "#0e44af",
-               "G x E x M" = "red4"),
-    breaks = c("Structured effect", "G x M", "Lack of fit effect", "G x E", "Residual effect", "G x E x M")) +
+    values = c("G (main effect)" = "orange2",
+               "G x E x M - (latent) covariables" = "#fcdd06",
+               "G x M" = "purple1",
+               "G x E x M - lack of fit" = "#db161f",
+               "G x E" = "purple3",
+               "Residual" = "#0e44af",
+               "G x E x M" = "purple4"),
+    breaks = c("G (main effect)", "G x E x M - (latent) covariables", "G x M", "G x E x M - lack of fit", "G x E", "Residual", "G x E x M")) +
   # scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
   ylab("Variance") +
   theme_classic(base_size = 18) + theme(legend.position = "bottom",
@@ -726,14 +728,14 @@ ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment
   facet_grid(cols = vars(Management), rows = vars(Environment), scales = "free_y") +
   geom_bar(stat = "identity") +
   scale_fill_manual(#values = c("#fcdd06", "red1", "red3", "red4", "#fcdd06", "#db161f", "#0e44af"),
-    values = c("G" = "#fcdd06",
-               "Structured effect" = "#fcdd06",
-               "G x M" = "red1",
-               "Lack of fit effect" = "#db161f",
-               "G x E" = "red3",
-               "Residual effect" = "#0e44af",
-               "G x E x M" = "red4"),
-    breaks = c("Structured effect", "G x M", "Lack of fit effect", "G x E", "Residual effect", "G x E x M")) +
+    values = c("G (main effect)" = "orange2",
+               "G x E x M - (latent) covariables" = "#fcdd06",
+               "G x M" = "purple1",
+               "G x E x M - lack of fit" = "#db161f",
+               "G x E" = "purple3",
+               "Residual" = "#0e44af",
+               "G x E x M" = "purple4"),
+    breaks = c("G (main effect)", "G x E x M - (latent) covariables", "G x M", "G x E x M - lack of fit", "G x E", "Residual", "G x E x M")) +
   # scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
   ylab("Variance") +
   theme_classic(base_size = 18) + theme(legend.position = "bottom",
@@ -744,14 +746,21 @@ ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment
 ggsave(filename = "plots/BRIWECS_LOF_perEnv_numeric_SE_B_extendedbaseline.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 ## Text of section 3.1 ====
-tmp <- data.frame(Model = results.FVP$Model,
-                  Management = results.FVP$Management,
-                  Environment = results.FVP$Environment,
-                  LC = results.FVP$G,
-                  LOF = results.FVP$`G x M` + results.FVP$`G x E` + results.FVP$`G x E x M`,
-                  Residual = results.FVP$Residual)
-colnames(tmp) <- colnames(results)
-results4 <- rbind(results, tmp)
+tmp1 <- data.frame(Model = results.FVP$Model,
+                   Management = results.FVP$Management,
+                   Environment = results.FVP$Environment,
+                   LC = results.FVP$G,
+                   LOF = results.FVP$`G x M` + results.FVP$`G x E` + results.FVP$`G x E x M`,
+                   Residual = results.FVP$Residual)
+colnames(tmp1) <- colnames(results)
+tmp2 <- data.frame(Model = results.ADD$Model,
+                   Management = results.ADD$Management,
+                   Environment = results.ADD$Environment,
+                   LC = results.ADD$G,
+                   LOF = results.ADD$LOF,
+                   Residual = results.ADD$Residual)
+colnames(tmp2) <- colnames(results)
+results4 <- rbind(results, tmp1, tmp2)
 
 results4$Total <- results4$`(Latent) Covariables` + results4$LOF + results4$Residual
 results4$Covariable_percentage <- results4$`(Latent) Covariables` / results4$Total
