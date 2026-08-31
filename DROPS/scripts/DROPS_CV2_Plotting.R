@@ -3,7 +3,7 @@
 library(ggplot2)
 library(patchwork)
 results <- readRDS("DROPS/results/CV2/results.CV2.SE.1-150.rds")
-results.mb <- readRDS("DROPS/results/CV2/old_MB_results/results.MB.CV2.SE.1-150.rds")
+results.mb <- readRDS("DROPS/results/CV2/results.MB.CV2.SE.1-150.rds")
 results <- rbind(results, results.mb)
 means <- aggregate(results, cbind(cor_pearson, RMSE) ~ Checks + Model + Man, FUN = mean)
 SEs <- aggregate(results, cbind(cor_pearson, RMSE) ~ Checks + Model + Man, FUN = function(x) sd(x)/sqrt(length(x)))
@@ -136,7 +136,7 @@ ggsave(plot = RMSEW, filename = "plots/DROPS_CV2_RMSEW.png", dpi = 300, width = 
 # Plotting per environment:
 rm(list = ls())
 results <- readRDS("DROPS/results/CV2/results.CV2.SE.1-150.rds")
-results.mb <- readRDS("DROPS/results/CV2/old_MB_results/results.MB.CV2.SE.1-150.rds")
+results.mb <- readRDS("DROPS/results/CV2/results.MB.CV2.SE.1-150.rds")
 results <- rbind(results, results.mb)
 means <- aggregate(results, cbind(cor_pearson, RMSE) ~ Checks + Model + Man + Env, FUN = mean)
 SEs <- aggregate(results, cbind(cor_pearson, RMSE) ~ Checks + Model + Man + Env, FUN = function(x) sd(x)/sqrt(length(x)))

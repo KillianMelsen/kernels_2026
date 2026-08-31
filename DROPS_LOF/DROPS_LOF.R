@@ -665,11 +665,11 @@ perc <- ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
   scale_fill_manual(#values = c("#fcdd06", "red1", "red3", "red4", "#fcdd06", "#db161f", "#0e44af"),
                     values = c("G (main effect)" = "orange2",
                                "G x E x M - (latent) covariables" = "#fcdd06",
-                               "G x M" = "purple1",
+                               "G x M" = "gray30",
                                "G x E x M - lack of fit" = "#db161f",
-                               "G x E" = "purple3",
+                               "G x E" = "gray50",
                                "Residual" = "#0e44af",
-                               "G x E x M" = "purple4"),
+                               "G x E x M" = "gray80"),
                     breaks = c("G (main effect)", "G x E x M - (latent) covariables", "G x M", "G x E x M - lack of fit", "G x E", "Residual", "G x E x M")) +
   scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
   ylab("Percentage of\ntotal variance") +
@@ -686,11 +686,11 @@ var <- ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
   geom_bar(stat = "identity") +
   scale_fill_manual(values = c("G (main effect)" = "orange2",
                                "G x E x M - (latent) covariables" = "#fcdd06",
-                               "G x M" = "purple1",
+                               "G x M" = "gray30",
                                "G x E x M - lack of fit" = "#db161f",
-                               "G x E" = "purple3",
+                               "G x E" = "gray50",
                                "Residual" = "#0e44af",
-                               "G x E x M" = "purple4")) +
+                               "G x E x M" = "gray80")) +
   # scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
   ylab("Variance") + xlab(NULL) +
   theme_classic(base_size = 18) +
@@ -701,7 +701,7 @@ var <- ggplot(results3, aes(fill = Component, y = Variance, x = Model)) +
         axis.text.x = element_blank())
 var
 var / perc
-ggsave(filename = "plots/DROPS_LOF_Averaged_numeric_combined_SE_extendedbaseline.png", dpi = 300, width = 32, height = 20, units = "cm")
+ggsave(filename = "plots/DROPS_LOF_Averaged_numeric_combined.png", dpi = 300, width = 32, height = 20, units = "cm")
 
 ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment)[1:7],]), aes(fill = Component, y = Variance, x = Model)) +
   facet_grid(cols = vars(Management), rows = vars(Environment), scales = "free_y") +
@@ -709,11 +709,11 @@ ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment
   scale_fill_manual(#values = c("#fcdd06", "red1", "red3", "red4", "#fcdd06", "#db161f", "#0e44af"),
     values = c("G (main effect)" = "orange2",
                "G x E x M - (latent) covariables" = "#fcdd06",
-               "G x M" = "purple1",
+               "G x M" = "gray30",
                "G x E x M - lack of fit" = "#db161f",
-               "G x E" = "purple3",
+               "G x E" = "gray50",
                "Residual" = "#0e44af",
-               "G x E x M" = "purple4"),
+               "G x E x M" = "gray80"),
     breaks = c("G (main effect)", "G x E x M - (latent) covariables", "G x M", "G x E x M - lack of fit", "G x E", "Residual", "G x E x M")) +
   # scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
   ylab("Variance") +
@@ -722,7 +722,7 @@ ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment
                                         strip.text = element_text(size = 20),
                                         axis.title.y = element_text(size = 20),
                                         axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1.1))
-ggsave(filename = "plots/DROPS_LOF_perEnv_numeric_SE_A_extendedbaseline.png", dpi = 300, width = 32, height = 48, units = "cm")
+ggsave(filename = "plots/DROPS_LOF_perEnv_numeric_A.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment)[8:14],]), aes(fill = Component, y = Variance, x = Model)) +
   facet_grid(cols = vars(Management), rows = vars(Environment), scales = "free_y") +
@@ -730,11 +730,11 @@ ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment
   scale_fill_manual(#values = c("#fcdd06", "red1", "red3", "red4", "#fcdd06", "#db161f", "#0e44af"),
     values = c("G (main effect)" = "orange2",
                "G x E x M - (latent) covariables" = "#fcdd06",
-               "G x M" = "purple1",
+               "G x M" = "gray30",
                "G x E x M - lack of fit" = "#db161f",
-               "G x E" = "purple3",
+               "G x E" = "gray50",
                "Residual" = "#0e44af",
-               "G x E x M" = "purple4"),
+               "G x E x M" = "gray80"),
     breaks = c("G (main effect)", "G x E x M - (latent) covariables", "G x M", "G x E x M - lack of fit", "G x E", "Residual", "G x E x M")) +
   # scale_y_continuous(labels = scales::percent, breaks = c(0.0, 0.5, 1.0)) +
   ylab("Variance") +
@@ -743,7 +743,7 @@ ggplot(droplevels(results2[results2$Environment %in% levels(results2$Environment
                                         strip.text = element_text(size = 20),
                                         axis.title.y = element_text(size = 20),
                                         axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1.1))
-ggsave(filename = "plots/DROPS_LOF_perEnv_numeric_SE_B_extendedbaseline.png", dpi = 300, width = 32, height = 48, units = "cm")
+ggsave(filename = "plots/DROPS_LOF_perEnv_numeric_B.png", dpi = 300, width = 32, height = 48, units = "cm")
 
 ## Text of section 3.1 ====
 tmp1 <- data.frame(Model = results.FVP$Model,

@@ -35,7 +35,7 @@ coords <- read.csv("DROPS/raw_data/11-Info-Study.tab", sep = "\t")
 # coords <- read.csv("DROPS/raw_data/3b-Indices_Env_level.csv")[, c("Experiment", "Lat", "Long")]
 coords$Loc <- gsub("(.*)[1-9][1-9]", "\\1", coords$StudyUniqueID)
 coords <- unique(coords[, c("Loc", "GeographicLocationLatitude", "GeographicLocationLongitude")])
-envs <- rownames(readRDS("DROPS/data/EC.rds"))
+envs <- rownames(readRDS("DROPS/data/EC.SE.rds"))
 envs <- unique(gsub("(.*)[1-9][1-9]", "\\1", envs))
 coords <- coords[match(envs, coords$Loc),]
 names(coords) <- c("Loc", "Lat", "Lon")
